@@ -20,6 +20,7 @@ const path = require('path');
 const multer = require('multer'); // ✅ ADDED
 const { pool } = require('./db/connection');
 const db = require('./db/helpers');
+const cloudStorage = require('./db/storage'); // ✅ Cloud storage (Supabase) with local fallback
 
 const app = express();
 app.use(cors()); 
@@ -3694,7 +3695,7 @@ app.get('/api/admin/data', requireAuth, requireAdmin, async (req, res) => {
 app.post('/api/admin/announcements/create', requireAuth, requireAdmin, upload.single('image'), async (req, res) => {
     const { title, category, content, event_date, prize_pool, button_label, button_link } = req.body;
     let image_url = req.body.image_url || null;
-    if (req.file) image_url = '/assets/images/' + req.file.filename;
+    if (req.file) image_url = await cloudStorage.saveUploadedFile(req.file, 'images');
     try {
         const result = await pool.query(
             'INSERT INTO announcements (title, category, content, image_url, event_date, prize_pool, button_label, button_link) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
@@ -3710,7 +3711,7 @@ app.put('/api/admin/announcements/update/:id', requireAuth, requireAdmin, upload
     const { id } = req.params;
     const { title, category, content, image_url, event_date, prize_pool, button_label, button_link } = req.body;
     let finalImageUrl = image_url || null;
-    if (req.file) finalImageUrl = '/assets/images/' + req.file.filename;
+    if (req.file) finalImageUrl = await cloudStorage.saveUploadedFile(req.file, 'images');
     try {
         const result = await pool.query(
             'UPDATE announcements SET title = $1, category = $2, content = $3, image_url = $4, event_date = $5, prize_pool = $6, button_label = $7, button_link = $8 WHERE announcement_id = $9 RETURNING *',
@@ -3896,9 +3897,9 @@ app.post('/api/admin/music/create', requireAuth, requireAdmin, upload.fields([
 ]), async (req, res) => {
     const { title, artist, category } = req.body;
     
-    // Determine file paths
-    const coverPath = req.files?.cover_image ? `/assets/images/${req.files.cover_image[0].filename}` : null;
-    const audioPath = req.files?.audio_file ? `/assets/audio/${req.files.audio_file[0].filename}` : null;
+    // Determine file paths (cloud URL if Supabase configured, else local)
+    const coverPath = req.files?.cover_image ? await cloudStorage.saveUploadedFile(req.files.cover_image[0], 'images') : null;
+    const audioPath = req.files?.audio_file ? await cloudStorage.saveUploadedFile(req.files.audio_file[0], 'audio') : null;
 
     if (!title || !audioPath) {
         return res.status(400).json({ ok: false, message: 'Title and Audio File are required' });
@@ -3930,8 +3931,8 @@ app.put('/api/admin/music/update/:id', requireAuth, requireAdmin, upload.fields(
     }
     
     // Determine file paths (keep old if no new files)
-    const coverPath = req.files?.cover_image ? `/assets/images/${req.files.cover_image[0].filename}` : currentAlbum.rows[0].cover_image;
-    const audioPath = req.files?.audio_file ? `/assets/audio/${req.files.audio_file[0].filename}` : currentAlbum.rows[0].audio_file;
+    const coverPath = req.files?.cover_image ? await cloudStorage.saveUploadedFile(req.files.cover_image[0], 'images') : currentAlbum.rows[0].cover_image;
+    const audioPath = req.files?.audio_file ? await cloudStorage.saveUploadedFile(req.files.audio_file[0], 'audio') : currentAlbum.rows[0].audio_file;
 
     try {
         const result = await pool.query(

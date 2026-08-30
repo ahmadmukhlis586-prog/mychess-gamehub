@@ -11,6 +11,7 @@
     "build": "npm --prefix client run build",
     "start": "node server/server.js",
     "deploy:db": "node server/db/deploy.js",
+    "sync:cloud": "node server/db/sync-cloud.js",
     "dev:client": "npm --prefix client run dev",
     "dev:server": "npm --prefix server run dev"
   },
