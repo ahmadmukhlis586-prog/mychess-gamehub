@@ -8,12 +8,3 @@ services:
     plan: free
     buildCommand: "npm run install:all && npm run build"
     startCommand: "node server/server.js"
-    healthCheckPath: /api/music/albums
-    envVars:
-      - key: NODE_ENV
-        value: production
-      # Set your free PostgreSQL connection string (e.g. from Neon).
-      # Create a DATABASE_URL env var in Render pointing to your cloud DB.
-      # Then run "node server/db/deploy.js --push" once to copy your data.
-      - key: PORT
-        sync: false

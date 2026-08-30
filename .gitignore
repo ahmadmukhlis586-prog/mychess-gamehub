@@ -36,3 +36,6 @@ server/public/assets/*
 # Temp / system
 Thumbs.db
 *.tmp
+
+# Local database backups (never push your DB dump to git)
+server/db-backups/
