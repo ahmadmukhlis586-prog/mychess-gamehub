@@ -2264,6 +2264,7 @@ app.post('/api/friends/request', requireAuth, async (req, res) => {
                 ['pending', req.account.id, row.id]
             );
             emitFriendRequest(friendId, req.account, 'friendRequest');
+            await notifyFriendRequest(friendId, req.account);
             return res.json({ ok: true, message: 'Friend request sent' });
         }
 
@@ -2272,6 +2273,7 @@ app.post('/api/friends/request', requireAuth, async (req, res) => {
             [low, high, 'pending', req.account.id]
         );
         emitFriendRequest(friendId, req.account, 'friendRequest');
+        await notifyFriendRequest(friendId, req.account);
         res.json({ ok: true, message: 'Friend request sent', id: ins.rows[0].id });
     } catch (error) {
         console.error('Friend request error:', error);
@@ -2294,6 +2296,8 @@ app.post('/api/friends/accept', requireAuth, async (req, res) => {
         emitFriendUpdate(req.account.id);
         emitFriendUpdate(friendId);
         emitFriendRequest(req.account, { id: friendId, username: req.account.username }, 'friendAccepted');
+        const requesterId = r.rows[0].requester_id && r.rows[0].requester_id !== req.account.id ? r.rows[0].requester_id : friendId;
+        await notifyFriendAccepted(requesterId, req.account);
         res.json({ ok: true });
     } catch (error) {
         console.error('Friend accept error:', error);
@@ -2450,6 +2454,7 @@ app.post('/api/messages', requireAuth, async (req, res) => {
             body: msg.body,
             at: msg.created_at,
         });
+        await notifyNewMessage(friendId, req.account, msg.body);
         // echo back to sender's own sockets
         emitFriendMessage(req.account.id, {
             id: msg.id,
@@ -2528,6 +2533,78 @@ function emitFriendMessage(targetAccountId, payload, echo) {
             io.to(sid).emit('friendMessage', { ...payload, echo: !!echo });
         });
     }
+}
+
+// Deliver the existing 'notification' socket event to all of an account's
+// sockets (the header notification bell listens for this event on any socket).
+function emitNotification(accountId, data) {
+    const target = activeAccounts.get(String(accountId));
+    if (target) {
+        target.socketIds.forEach((sid) => {
+            io.to(sid).emit('notification', data);
+        });
+    }
+}
+
+// Persist + push a friend-request notification to the receiver's bell.
+async function notifyFriendRequest(receiverId, from) {
+    try {
+        await db.createNotification(
+            receiverId,
+            'friendRequest',
+            '🔔 New Friend Request',
+            `${from.username} sent you a friend request`,
+            { type: 'friendRequest', fromId: from.id, fromName: from.username }
+        );
+    } catch (e) {
+        console.error('Friend request notification error:', e);
+    }
+    emitNotification(receiverId, {
+        type: 'friendRequest',
+        title: '🔔 New Friend Request',
+        message: `${from.username} sent you a friend request`,
+    });
+}
+
+// Persist + push an "accepted" notification to the original requester.
+async function notifyFriendAccepted(requesterId, from) {
+    try {
+        await db.createNotification(
+            requesterId,
+            'friendAccepted',
+            '✅ Friend Request Accepted',
+            `${from.username} accepted your friend request`,
+            { type: 'friendAccepted', fromId: from.id, fromName: from.username }
+        );
+    } catch (e) {
+        console.error('Friend accepted notification error:', e);
+    }
+    emitNotification(requesterId, {
+        type: 'friendAccepted',
+        title: '✅ Friend Request Accepted',
+        message: `${from.username} accepted your friend request`,
+    });
+}
+
+// Persist + push a new DM notification to the receiver's bell.
+async function notifyNewMessage(receiverId, from, bodyPreview) {
+    const preview = String(bodyPreview || '').slice(0, 80);
+    try {
+        await db.createNotification(
+            receiverId,
+            'message',
+            '💬 New Message',
+            `${from.username}: ${preview}`,
+            { type: 'message', fromId: from.id, fromName: from.username, body: preview }
+        );
+    } catch (e) {
+        console.error('Message notification error:', e);
+    }
+    emitNotification(receiverId, {
+        type: 'message',
+        title: '💬 New Message',
+        message: `${from.username}: ${preview}`,
+    });
 }
 
 // Challenge a friend: the challenger creates a room, then invites the friend.
