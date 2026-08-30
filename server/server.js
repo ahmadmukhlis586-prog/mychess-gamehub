@@ -2396,6 +2396,27 @@ async function areFriends(a, b) {
 |--------------------------------------------------------------------------
 */
 
+// Unread direct messages, grouped per sender (for the floating message bubble).
+app.get('/api/messages/unread', requireAuth, async (req, res) => {
+    try {
+        const me = req.account.id;
+        const r = await pool.query(
+            `SELECT u.id AS sender_id, u.username AS sender_name, COUNT(*) AS count
+             FROM friend_messages m
+             JOIN accounts u ON u.id = m.sender_id
+             WHERE m.receiver_id=$1 AND m.read_at IS NULL
+             GROUP BY u.id, u.username
+             ORDER BY MAX(m.created_at) DESC`,
+            [me]
+        );
+        const total = r.rows.reduce((sum, x) => sum + Number(x.count || 0), 0);
+        res.json({ ok: true, total, senders: r.rows });
+    } catch (error) {
+        console.error('Unread messages error:', error);
+        res.status(500).json({ ok: false, message: 'Could not load unread messages' });
+    }
+});
+
 // Get the conversation with a friend (oldest -> newest)
 app.get('/api/messages/:friendId', requireAuth, async (req, res) => {
     try {
@@ -2454,7 +2475,6 @@ app.post('/api/messages', requireAuth, async (req, res) => {
             body: msg.body,
             at: msg.created_at,
         });
-        await notifyNewMessage(friendId, req.account, msg.body);
         // echo back to sender's own sockets
         emitFriendMessage(req.account.id, {
             id: msg.id,
@@ -2588,23 +2608,8 @@ async function notifyFriendAccepted(requesterId, from) {
 
 // Persist + push a new DM notification to the receiver's bell.
 async function notifyNewMessage(receiverId, from, bodyPreview) {
-    const preview = String(bodyPreview || '').slice(0, 80);
-    try {
-        await db.createNotification(
-            receiverId,
-            'message',
-            '💬 New Message',
-            `${from.username}: ${preview}`,
-            { type: 'message', fromId: from.id, fromName: from.username, body: preview }
-        );
-    } catch (e) {
-        console.error('Message notification error:', e);
-    }
-    emitNotification(receiverId, {
-        type: 'message',
-        title: '💬 New Message',
-        message: `${from.username}: ${preview}`,
-    });
+    // Direct messages are surfaced via the floating message bubble on the
+    // client (listening for the 'friendMessage' socket event), not here.
 }
 
 // Challenge a friend: the challenger creates a room, then invites the friend.

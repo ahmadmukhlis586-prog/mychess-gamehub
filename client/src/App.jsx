@@ -13,6 +13,7 @@ import './App.css';
 import ShopPage from './pages/ShopPage';
 import { initClickSound, playClickSound, reinitializeTheme, playCaptureSound } from './helpers';
 import MusicWidget from './components/MusicWidget';
+import MessageNotifier from './components/MessageNotifier';
 import FloatingBackground from './components/FloatingBackground';
 import GameHistory from './pages/GameHistory';
 import InventoryPage from './pages/InventoryPage';
@@ -1153,6 +1154,7 @@ function App() {
       <div style={MATCH_STYLES.page}>
         <FloatingBackground />
         <MusicWidget />
+        <MessageNotifier />
 
         {showMatchFoundVS && (
           <MatchFoundVS
@@ -1458,6 +1460,7 @@ function App() {
           <div className="mychess-home-page">
             <FloatingBackground />
             <MusicWidget />
+        <MessageNotifier />
             <LoginParticles active={showLoginParticles} />
             <div className="mychess-home-grid" />
             <div className="mychess-home-glow home-glow-one" />
@@ -1910,6 +1913,7 @@ function App() {
           <div className="mychess-auth-page">
             <FloatingBackground />
             <MusicWidget />
+        <MessageNotifier />
             <div className="mychess-background-grid" />
             <div className="mychess-glow glow-one" />
             <div className="mychess-glow glow-two" />
