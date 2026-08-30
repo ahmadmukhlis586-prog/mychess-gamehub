@@ -1,0 +1,498 @@
+/* =========================================================
+   SHOP OVERLAY (WRAPPER)
+   ========================================================= */
+.shop-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999999;
+  background: rgba(9, 5, 20, 0.95);
+  backdrop-filter: blur(16px);
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  animation: shopFadeIn 0.3s ease;
+}
+
+@keyframes shopFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.shop-overlay::-webkit-scrollbar {
+  width: 6px;
+}
+
+.shop-overlay::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.shop-overlay::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 10px;
+}
+
+.shop-overlay::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
+}
+
+/* =========================================================
+   SHOP CLOSE BUTTON
+   ========================================================= */
+.shop-close-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  right: auto;
+  width: auto;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(168,85,247,0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: #a78bfa;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shop-close-btn:hover {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #ffffff;
+  transform: none;
+}
+
+/* =========================================================
+   SHOP PAGE CONTENT
+   ========================================================= */
+.shop-page {
+  padding: 50px 30px 30px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  color: #ffffff;
+}
+
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 30px;
+  padding: 20px 24px;
+  background: rgba(15, 10, 28, 0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(168, 85, 247, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.shop-title h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shop-title p {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.currency-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.currency-gems {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fbbf24;
+  padding: 6px 16px;
+  background: rgba(251, 191, 36, 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+.shop-message {
+  padding: 12px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.shop-message.success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.shop-message.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.shop-message.info {
+  background: rgba(96, 165, 250, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+/* =========================================================
+   CATEGORIES
+   ========================================================= */
+.shop-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.category-btn {
+  padding: 8px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.category-btn:hover {
+  background: rgba(168, 85, 247, 0.1);
+  color: #ffffff;
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+.category-btn.active {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.3);
+  color: #c4b5fd;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.05);
+}
+
+/* =========================================================
+   ITEMS GRID
+   ========================================================= */
+.shop-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.loading-spinner {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+}
+
+.empty-shop {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 14px;
+}
+
+/* =========================================================
+   INDIVIDUAL ITEM CARD
+   ========================================================= */
+.shop-item {
+  background: rgba(15, 10, 28, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 20px 18px 18px;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(4px);
+}
+
+.shop-item:hover {
+  transform: translateY(-4px);
+  border-color: rgba(168, 85, 247, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.shop-item.owned {
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.04);
+}
+
+.shop-item.rarity-common { border-left: 3px solid #6b7280; }
+.shop-item.rarity-uncommon { border-left: 3px solid #34d399; }
+.shop-item.rarity-rare { border-left: 3px solid #60a5fa; }
+.shop-item.rarity-epic { border-left: 3px solid #a855f7; }
+.shop-item.rarity-legendary { border-left: 3px solid #f59e0b; }
+
+.item-rarity {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  position: absolute;
+  top: 12px;
+  left: 14px;
+}
+
+.item-icon {
+  font-size: 44px;
+  margin: 16px 0 8px;
+  position: relative;
+}
+
+.glow-effect,
+.particles-effect {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  filter: blur(15px);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.glow-effect {
+  background: radial-gradient(circle, #fbbf24, transparent);
+}
+
+.particles-effect {
+  background: radial-gradient(circle, #a855f7, transparent);
+}
+
+.item-info h3 {
+  margin: 10px 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.item-info p {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.4;
+}
+
+.item-meta {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 11px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.item-category {
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.item-price {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.item-owned {
+  color: #34d399;
+  font-weight: 700;
+}
+
+.item-equipped {
+  color: #60a5fa;
+  font-weight: 700;
+}
+
+.item-actions button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.purchase-btn {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #ffffff;
+}
+
+.purchase-btn:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+}
+
+.purchase-btn:disabled {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.25);
+  cursor: not-allowed;
+}
+
+.equip-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.equip-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.equip-btn.equipped {
+  background: rgba(96, 165, 250, 0.12);
+  color: #60a5fa;
+  cursor: default;
+}
+
+.equip-btn:disabled:not(.equipped) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 768px) {
+  .shop-page {
+    padding: 40px 16px 20px;
+  }
+
+  .shop-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 18px;
+  }
+
+  .shop-title h1 {
+    font-size: 22px;
+  }
+
+  .currency-display {
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .currency-gems {
+    font-size: 15px;
+    padding: 4px 12px;
+  }
+
+  .shop-items {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .shop-item {
+    padding: 16px 12px 14px;
+  }
+
+  .item-icon {
+    font-size: 36px;
+  }
+
+  .shop-close-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: auto;
+    width: auto;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 1000000;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(168,85,247,0.3);
+    border-radius: 10px;
+    color: #a78bfa;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .shop-close-btn:hover {
+    background: rgba(168,85,247,0.15);
+    border-color: rgba(168,85,247,0.5);
+    color: #fff;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-close-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: auto;
+    width: auto;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 1000000;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(168,85,247,0.3);
+    border-radius: 10px;
+    color: #a78bfa;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .shop-close-btn:hover {
+    background: rgba(168,85,247,0.15);
+    border-color: rgba(168,85,247,0.5);
+    color: #fff;
+    transform: none;
+  }
+
+  .shop-items {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .shop-item {
+    padding: 12px 10px 12px;
+  }
+
+  .item-info h3 {
+    font-size: 13px;
+  }
+
+  .item-info p {
+    font-size: 10px;
+    margin-bottom: 10px;
+  }
+
+  .item-actions button {
+    font-size: 11px;
+    padding: 8px;
+  }
+}

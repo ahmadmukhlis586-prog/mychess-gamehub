@@ -1,0 +1,43 @@
+{
+  "accounts": [
+    {
+      "id": "abdcea6c-94df-414f-a87f-d50325cb7f78",
+      "username": "TestPlayer",
+      "email": "test@mychess.local",
+      "passwordHash": "f06efede7271c1a74bb149c8882ac33b65cea9c32b1051686b29e600af8cfc6666bc411774090e56df290213687d17730d4d5a8545b4943d7c2c98f5aee7a3e4",
+      "passwordSalt": "95c69957f217b20445e60e3e9f18bbfe",
+      "elo": 0,
+      "games": 0,
+      "wins": 0,
+      "draws": 0,
+      "losses": 0,
+      "createdAt": "2026-08-20T14:57:41.412Z"
+    },
+    {
+      "id": "869d4f10-4329-4606-8b75-fe54781686e1",
+      "username": "Mukhlis586",
+      "email": "ahmadmukhlis586@gmail.com",
+      "passwordHash": "ff6c1c324cfc8ca13799e7e60b8b2b111046ef4c993288edddcd118d508f7f800b7188e98246830d24ebd5cec08a50781fd636f927a2448a262914ffb387d2c3",
+      "passwordSalt": "5180e6f4d2111cec9c2c3868870d6382",
+      "elo": 0,
+      "games": 0,
+      "wins": 0,
+      "draws": 0,
+      "losses": 0,
+      "createdAt": "2026-08-20T15:14:18.538Z"
+    },
+    {
+      "id": "b4898f7d-c4d0-4ae8-8448-b7eef53067ac",
+      "username": "Mukhlis476",
+      "email": "ahmadmukhlis476@gmail.com",
+      "passwordHash": "e20d938e25ebbecdc7fbf2c8c7cbf9552821136bc02fa64b0b5b0a6310c5b0681a185c98181a1238a3fa69adc5b6233517bde8057f75eff481965650ab0a8359",
+      "passwordSalt": "20d178b1d1b197e86e75bf4e3fb27256",
+      "elo": 0,
+      "games": 0,
+      "wins": 0,
+      "draws": 0,
+      "losses": 0,
+      "createdAt": "2026-08-20T15:15:15.036Z"
+    }
+  ]
+}

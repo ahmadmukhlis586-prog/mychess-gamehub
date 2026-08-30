@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Environment / secrets (NEVER commit)
+**/.env
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Uploaded media (generated at runtime)
+server/public/assets/images/*
+server/public/assets/audio/*
+server/public/assets/*
+!server/public/assets/images/.gitkeep
+!server/public/assets/audio/.gitkeep
+
+# Temp / system
+Thumbs.db
+*.tmp

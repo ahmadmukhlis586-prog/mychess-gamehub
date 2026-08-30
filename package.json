@@ -1,0 +1,18 @@
+{
+  "name": "mychess-gamehub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MYCHESS GameHub - Realtime multiplayer chess (combined frontend + backend, single-link deploy)",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "build": "npm --prefix client run build",
+    "start": "node server/server.js",
+    "deploy:db": "node server/db/deploy.js",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev"
+  },
+  "license": "ISC"
+}
