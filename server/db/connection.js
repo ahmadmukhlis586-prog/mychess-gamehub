@@ -24,6 +24,17 @@ const pool = process.env.DATABASE_URL
           connectionTimeoutMillis: 10000,
       });
 
+// Neon/cloud hosts sometimes do not default search_path to public, which makes
+// unqualified table names (e.g. `accounts`) fail with "relation does not exist".
+// Run SET search_path on every new pooled connection so all queries resolve.
+if (process.env.DATABASE_URL) {
+    pool.on('connect', (client) => {
+        client.query('SET search_path TO public').catch((e) => {
+            console.error('Failed to set search_path:', e.message);
+        });
+    });
+}
+
 // If we're NOT on localhost (e.g. deployed) but no DATABASE_URL is set,
 // fail loudly with a clear message instead of timing out on localhost.
 const isCloud = process.env.PORT && process.env.PORT !== '4000' && process.env.DB_HOST === 'localhost';
