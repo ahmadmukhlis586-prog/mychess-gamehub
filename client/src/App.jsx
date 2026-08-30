@@ -343,6 +343,8 @@ function App() {
   const presenceSocketRef = useRef(null);
   const [invite, setInvite] = useState(null); // { fromId, fromName, roomCode }
   const [friendsRefresh, setFriendsRefresh] = useState(0);
+  const [dmIncoming, setDmIncoming] = useState(null); // incoming DM to relay to FriendsPanel
+  const [dmTick, setDmTick] = useState(0);
  
   const isRegister = mode === 'register';
 
@@ -445,6 +447,11 @@ function App() {
         fromName: data.fromName,
         roomCode: data.roomCode,
       });
+    });
+    presence.on('friendMessage', (data) => {
+      setDmIncoming(data);
+      setDmTick((n) => n + 1);
+      setFriendsRefresh((n) => n + 1);
     });
 
     return () => {
@@ -1868,6 +1875,8 @@ function App() {
                 token={localStorage.getItem(TOKEN_KEY)}
                 onClose={closeFriends}
                 refreshKey={friendsRefresh}
+                dmIncoming={dmIncoming}
+                dmTick={dmTick}
               />
             )}
 

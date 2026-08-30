@@ -2376,6 +2376,121 @@ app.get('/api/friends', requireAuth, async (req, res) => {
     }
 });
 
+// Verify two accounts are accepted friends
+async function areFriends(a, b) {
+    const [low, high] = friendKeys(String(a), String(b));
+    const r = await pool.query(
+        `SELECT 1 FROM friends WHERE user_id=$1 AND friend_id=$2 AND status='accepted'`,
+        [low, high]
+    );
+    return r.rows.length > 0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| FRIEND MESSAGES (private DM chat)
+|--------------------------------------------------------------------------
+*/
+
+// Get the conversation with a friend (oldest -> newest)
+app.get('/api/messages/:friendId', requireAuth, async (req, res) => {
+    try {
+        const friendId = String(req.params.friendId || '');
+        if (!(await areFriends(req.account.id, friendId))) {
+            return res.status(403).json({ ok: false, message: 'Not friends' });
+        }
+        const me = req.account.id;
+        const r = await pool.query(
+            `SELECT id, sender_id, receiver_id, body, created_at, read_at
+             FROM friend_messages
+             WHERE (sender_id=$1 AND receiver_id=$2) OR (sender_id=$2 AND receiver_id=$1)
+             ORDER BY created_at ASC, id ASC
+             LIMIT 500`,
+            [me, friendId]
+        );
+        res.json({
+            ok: true,
+            messages: r.rows.map((m) => ({
+                id: m.id,
+                fromMe: m.sender_id === me,
+                senderId: m.sender_id,
+                body: m.body,
+                createdAt: m.created_at,
+                read: !!m.read_at,
+            })),
+        });
+    } catch (error) {
+        console.error('Messages error:', error);
+        res.status(500).json({ ok: false, message: 'Could not load messages' });
+    }
+});
+
+// Send a private message to a friend
+app.post('/api/messages', requireAuth, async (req, res) => {
+    try {
+        const friendId = String(req.body.friendId || '');
+        const body = String(req.body.body || '').trim().slice(0, 1000);
+        if (!friendId || !body) {
+            return res.status(400).json({ ok: false, message: 'Message cannot be empty' });
+        }
+        if (!(await areFriends(req.account.id, friendId))) {
+            return res.status(403).json({ ok: false, message: 'Not friends' });
+        }
+        const ins = await pool.query(
+            `INSERT INTO friend_messages (sender_id, receiver_id, body)
+             VALUES ($1, $2, $3) RETURNING id, sender_id, receiver_id, body, created_at, read_at`,
+            [req.account.id, friendId, body]
+        );
+        const msg = ins.rows[0];
+        emitFriendMessage(friendId, {
+            id: msg.id,
+            fromId: req.account.id,
+            fromName: req.account.username,
+            toId: friendId,
+            body: msg.body,
+            at: msg.created_at,
+        });
+        // echo back to sender's own sockets
+        emitFriendMessage(req.account.id, {
+            id: msg.id,
+            fromId: req.account.id,
+            fromName: req.account.username,
+            toId: friendId,
+            body: msg.body,
+            at: msg.created_at,
+        }, true);
+        res.json({
+            ok: true,
+            message: {
+                id: msg.id,
+                fromMe: true,
+                senderId: msg.sender_id,
+                body: msg.body,
+                createdAt: msg.created_at,
+                read: !!msg.read_at,
+            },
+        });
+    } catch (error) {
+        console.error('Send message error:', error);
+        res.status(500).json({ ok: false, message: 'Could not send message' });
+    }
+});
+
+// Mark a conversation with a friend as read
+app.post('/api/messages/read', requireAuth, async (req, res) => {
+    try {
+        const friendId = String(req.body.friendId || '');
+        await pool.query(
+            `UPDATE friend_messages SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
+             WHERE receiver_id=$1 AND sender_id=$2 AND read_at IS NULL`,
+            [req.account.id, friendId]
+        );
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Could not mark read' });
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | FRIEND / CHALLENGE REALTIME EVENTS (socket)
@@ -2400,6 +2515,17 @@ function emitFriendUpdate(accountId) {
     if (target) {
         target.socketIds.forEach((sid) => {
             io.to(sid).emit('friendListChanged');
+        });
+    }
+}
+
+// Deliver a private message to all sockets of the target account.
+// If echo is true, the target is the sender (used to sync their other devices).
+function emitFriendMessage(targetAccountId, payload, echo) {
+    const target = activeAccounts.get(String(targetAccountId));
+    if (target) {
+        target.socketIds.forEach((sid) => {
+            io.to(sid).emit('friendMessage', { ...payload, echo: !!echo });
         });
     }
 }

@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { API_BASE } from '../config';
 
 // ============================================================
 // MYCHESS FRIENDS PANEL
-// Find friends, manage requests, and challenge friends to a live
-// match. Realtime updates arrive via a refreshKey that the parent
-// bumps whenever presence socket events (friendRequest /
-// friendAccepted / friendListChanged) are received.
+// Find friends, manage requests, challenge friends to a live
+// match, and chat with friends (private DM). Realtime updates
+// arrive via a refreshKey + dmTick that the parent bumps
+// whenever presence socket events are received.
 // ============================================================
 
-export default function FriendsPanel({ token, onClose, refreshKey }) {
+export default function FriendsPanel({ token, onClose, refreshKey, dmIncoming, dmTick }) {
   const [tab, setTab] = useState('friends'); // 'friends' | 'add'
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -19,6 +19,13 @@ export default function FriendsPanel({ token, onClose, refreshKey }) {
   const [searching, setSearching] = useState(false);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState('');
+
+  const [chatWith, setChatWith] = useState(null); // friend object, opens chat
+  const [messages, setMessages] = useState([]);
+  const [draft, setDraft] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatMsg, setChatMsg] = useState('');
+  const chatEndRef = useRef(null);
 
   const authHeaders = { Authorization: `Bearer ${token}` };
 
@@ -120,6 +127,136 @@ export default function FriendsPanel({ token, onClose, refreshKey }) {
     setBusy('');
   }
 
+  // ---------------- CHAT ----------------
+
+  async function loadMessages(friendId) {
+    if (!token) return;
+    setChatLoading(true);
+    setChatMsg('');
+    try {
+      const r = await fetch(`${API_BASE}/messages/${friendId}`, { headers: authHeaders });
+      const d = await safeJson(r);
+      setMessages(d.ok ? (d.messages || []) : []);
+      if (!d.ok) setChatMsg(d.message || 'Could not load chat.');
+      if (d.ok) {
+        fetch(`${API_BASE}/messages/read`, {
+          method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ friendId }),
+        });
+      }
+    } catch (e) {}
+    setChatLoading(false);
+  }
+
+  function openChat(friend) {
+    setChatWith(friend);
+    setMessages([]);
+    loadMessages(friend.id);
+  }
+
+  async function sendMessage() {
+    const body = draft.trim();
+    if (!body || !chatWith) return;
+    try {
+      const r = await fetch(`${API_BASE}/messages`, {
+        method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendId: chatWith.id, body }),
+      });
+      const d = await safeJson(r);
+      if (d.ok) {
+        setMessages((prev) => [...prev, d.message]);
+        setDraft('');
+      } else {
+        setChatMsg(d.message || 'Could not send message.');
+      }
+    } catch (e) {}
+  }
+
+  // Append realtime incoming message when it belongs to the open chat
+  useEffect(() => {
+    if (!dmIncoming || !chatWith) return;
+    if (dmIncoming.fromId === chatWith.id) {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id && m.id === dmIncoming.id)) return prev;
+        return [...prev, {
+          id: dmIncoming.id,
+          fromMe: false,
+          senderId: dmIncoming.fromId,
+          body: dmIncoming.body,
+          createdAt: dmIncoming.at,
+          read: false,
+        }];
+      });
+      fetch(`${API_BASE}/messages/read`, {
+        method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendId: chatWith.id }),
+      });
+    }
+  }, [dmTick]);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, chatWith]);
+
+  function formatTime(t) {
+    if (!t) return '';
+    const d = new Date(t);
+    if (isNaN(d)) return '';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // If a chat is open, show the conversation instead of the tabs
+  if (chatWith) {
+    return (
+      <div
+        className="mychess-modal-backdrop"
+        style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(5,3,10,.84)', backdropFilter: 'blur(12px)' }}
+        onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <div className="mychess-modal friends-panel" style={{ width: 'min(480px,100%)', maxHeight: 'calc(100vh - 48px)', display: 'flex', flexDirection: 'column' }}>
+          <button type="button" className="mychess-modal-close" onClick={onClose}>×</button>
+          <div className="friends-chat-head">
+            <button type="button" className="friends-back" onClick={() => { setChatWith(null); setMessages([]); }}>← Back</button>
+            <div>
+              <div className="friends-chat-title">{chatWith.username}</div>
+              <div className="friends-sub">{chatWith.online ? 'Online' : 'Offline'}</div>
+            </div>
+          </div>
+
+          <div className="friends-chat-body">
+            {chatLoading && <div className="friends-chat-empty">Loading...</div>}
+            {!chatLoading && messages.length === 0 && chatMsg === '' && (
+              <div className="friends-chat-empty">Say hi to {chatWith.username}! 👋</div>
+            )}
+            {messages.map((m) => (
+              <div key={m.id ?? m.createdAt + m.body} className={`friends-bubble ${m.fromMe ? 'mine' : 'theirs'}`}>
+                <div className="friends-bubble-text">{m.body}</div>
+                <div className="friends-bubble-time">{formatTime(m.createdAt)}{m.fromMe && (m.read ? ' ✓✓' : ' ✓')}</div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          {chatMsg && <div className="friends-msg">{chatMsg}</div>}
+
+          <div className="friends-chat-input">
+            <input
+              type="text"
+              placeholder={`Message ${chatWith.username}...`}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
+            />
+            <button type="button" className="mychess-shop-button" onClick={sendMessage} disabled={!draft.trim()}>
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="mychess-modal-backdrop"
@@ -182,6 +319,9 @@ export default function FriendsPanel({ token, onClose, refreshKey }) {
                   <div className="friends-actions">
                     <button type="button" className="mychess-shop-button" onClick={() => challengeFriend(f.id)} disabled={busy === 'c' + f.id}>
                       {busy === 'c' + f.id ? '...' : 'Challenge'}
+                    </button>
+                    <button type="button" className="mychess-shop-button" onClick={() => openChat(f)}>
+                      Message
                     </button>
                     <button type="button" className="mychess-shop-button friends-remove" onClick={() => removeFriend(f.id)} disabled={busy === 'r' + f.id}>
                       ✕

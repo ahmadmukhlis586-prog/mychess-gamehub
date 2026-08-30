@@ -2952,3 +2952,81 @@ a, a:hover, a:focus, a:active, button, .btn {
   .friends-row { flex-wrap: wrap; }
   .friends-actions { width: 100%; justify-content: flex-end; }
 }
+
+/* ============ FRIENDS CHAT (DM) ============ */
+.friends-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 4px 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 10px;
+}
+.friends-back {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.friends-back:hover { background: rgba(255, 255, 255, 0.12); }
+.friends-chat-title { font-weight: 700; color: #fff; font-size: 15px; text-align: center; }
+.friends-chat-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 2px;
+  min-height: 280px;
+  max-height: 46vh;
+}
+.friends-chat-empty { color: rgba(255, 255, 255, 0.45); font-size: 13px; text-align: center; padding: 20px 0; }
+.friends-bubble {
+  max-width: 78%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.friends-bubble.mine {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.friends-bubble.theirs {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom-left-radius: 4px;
+}
+.friends-bubble-time {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 3px;
+  text-align: right;
+}
+.friends-chat-input {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.friends-chat-input input {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+.friends-chat-input input::placeholder { color: rgba(255, 255, 255, 0.4); }
