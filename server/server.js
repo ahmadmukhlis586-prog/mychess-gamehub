@@ -2204,6 +2204,248 @@ app.get('/api/online-count', (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
+| FRIENDS & CHALLENGE
+|--------------------------------------------------------------------------
+*/
+
+const activeAccounts = new Map(); // accountId -> { username, socketIds:Set }
+
+// Canonical row: store (lower, higher) so each friendship has one row.
+function friendKeys(a, b) {
+    return a < b ? [a, b] : [b, a];
+}
+
+// Search users by username/email (exclude self)
+app.get('/api/friends/search', requireAuth, async (req, res) => {
+    try {
+        const q = (req.query.q || '').toString().trim();
+        if (!q) return res.json({ ok: true, users: [] });
+        const r = await pool.query(
+            `SELECT id, username, elo, role FROM accounts
+             WHERE id <> $1 AND (username ILIKE $2 OR email ILIKE $2)
+             ORDER BY username LIMIT 12`,
+            [req.account.id, `%${q}%`]
+        );
+        res.json({ ok: true, users: r.rows });
+    } catch (error) {
+        console.error('Friend search error:', error);
+        res.status(500).json({ ok: false, message: 'Search failed' });
+    }
+});
+
+// Send a friend request
+app.post('/api/friends/request', requireAuth, async (req, res) => {
+    try {
+        const friendId = String(req.body.friendId || '');
+        if (!friendId || friendId === req.account.id) {
+            return res.status(400).json({ ok: false, message: 'Invalid user' });
+        }
+        const [low, high] = friendKeys(req.account.id, friendId);
+        const existing = await pool.query(
+            'SELECT * FROM friends WHERE user_id=$1 AND friend_id=$2',
+            [low, high]
+        );
+        if (existing.rows.length) {
+            const row = existing.rows[0];
+            if (row.status === 'accepted') return res.json({ ok: true, message: 'Already friends' });
+            if (row.status === 'pending') {
+                // If the reverse request exists from them, accept immediately
+                if (row.requester_id === friendId) {
+                    await pool.query('UPDATE friends SET status=$1 WHERE id=$2', ['accepted', row.id]);
+                    emitFriendUpdate(req.account.id);
+                    emitFriendUpdate(friendId);
+                    return res.json({ ok: true, message: 'You are now friends!' });
+                }
+                return res.json({ ok: true, message: 'Request already sent' });
+            }
+            // declined -> re-send
+            await pool.query(
+                'UPDATE friends SET status=$1, requester_id=$2 WHERE id=$3',
+                ['pending', req.account.id, row.id]
+            );
+            emitFriendRequest(friendId, req.account, 'friendRequest');
+            return res.json({ ok: true, message: 'Friend request sent' });
+        }
+
+        const ins = await pool.query(
+            'INSERT INTO friends (user_id, friend_id, status, requester_id) VALUES ($1,$2,$3,$4) RETURNING *',
+            [low, high, 'pending', req.account.id]
+        );
+        emitFriendRequest(friendId, req.account, 'friendRequest');
+        res.json({ ok: true, message: 'Friend request sent', id: ins.rows[0].id });
+    } catch (error) {
+        console.error('Friend request error:', error);
+        res.status(500).json({ ok: false, message: 'Could not send request' });
+    }
+});
+
+// Accept a friend request
+app.post('/api/friends/accept', requireAuth, async (req, res) => {
+    try {
+        const friendId = String(req.body.friendId || '');
+        const [low, high] = friendKeys(req.account.id, friendId);
+        const r = await pool.query(
+            `UPDATE friends SET status='accepted'
+             WHERE user_id=$1 AND friend_id=$2 AND status='pending'
+             RETURNING *`,
+            [low, high]
+        );
+        if (!r.rows.length) return res.status(404).json({ ok: false, message: 'No pending request' });
+        emitFriendUpdate(req.account.id);
+        emitFriendUpdate(friendId);
+        emitFriendRequest(req.account, { id: friendId, username: req.account.username }, 'friendAccepted');
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Friend accept error:', error);
+        res.status(500).json({ ok: false, message: 'Could not accept' });
+    }
+});
+
+// Decline a friend request
+app.post('/api/friends/decline', requireAuth, async (req, res) => {
+    try {
+        const friendId = String(req.body.friendId || '');
+        const [low, high] = friendKeys(req.account.id, friendId);
+        await pool.query(
+            'UPDATE friends SET status=$1 WHERE user_id=$2 AND friend_id=$3',
+            ['declined', low, high]
+        );
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Could not decline' });
+    }
+});
+
+// Remove (unfriend) / cancel outgoing
+app.post('/api/friends/remove', requireAuth, async (req, res) => {
+    try {
+        const friendId = String(req.body.friendId || '');
+        const [low, high] = friendKeys(req.account.id, friendId);
+        await pool.query('DELETE FROM friends WHERE user_id=$1 AND friend_id=$2', [low, high]);
+        emitFriendUpdate(req.account.id);
+        emitFriendUpdate(friendId);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Could not remove' });
+    }
+});
+
+// List friends (accepted) + incoming pending requests
+app.get('/api/friends', requireAuth, async (req, res) => {
+    try {
+        const me = req.account.id;
+        // Accepted friends
+        const f = await pool.query(
+            `SELECT f.user_id, f.friend_id, a.username, a.elo, a.role
+             FROM friends f
+             JOIN accounts a ON (a.id = CASE WHEN f.user_id=$1 THEN f.friend_id ELSE f.user_id END)
+             WHERE f.status='accepted' AND ($1 IN (f.user_id, f.friend_id))
+             ORDER BY a.username`,
+            [me]
+        );
+        // Incoming pending requests (where requester is not me, and I'm one of the two parties)
+        const inc = await pool.query(
+            `SELECT f.id, f.requester_id AS user_id, a.username, a.elo, a.role
+             FROM friends f
+             JOIN accounts a ON a.id = f.requester_id
+             WHERE f.status='pending' AND f.requester_id <> $1 AND ($1 = f.user_id OR $1 = f.friend_id)
+             ORDER BY f.created_at DESC`,
+            [me]
+        );
+        const friendIds = f.rows.map(x => (x.user_id === me ? x.friend_id : x.user_id));
+        const friends = f.rows.map(x => {
+            const uid = x.user_id === me ? x.friend_id : x.user_id;
+            return {
+                id: uid,
+                username: x.username,
+                elo: Number(x.elo || 0),
+                online: activeAccounts.has(uid),
+            };
+        });
+        const requests = inc.rows.map(x => ({
+            id: x.id,
+            user_id: x.user_id,
+            username: x.username,
+            elo: Number(x.elo || 0),
+            online: activeAccounts.has(x.user_id),
+        }));
+        res.json({ ok: true, friends, requests, anyOnline: activeAccounts.size });
+    } catch (error) {
+        console.error('Friend list error:', error);
+        res.status(500).json({ ok: false, message: 'Could not load friends' });
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| FRIEND / CHALLENGE REALTIME EVENTS (socket)
+|--------------------------------------------------------------------------
+*/
+
+function emitFriendRequest(targetAccountId, from, evType) {
+    const target = activeAccounts.get(String(targetAccountId));
+    if (target) {
+        target.socketIds.forEach((sid) => {
+            io.to(sid).emit(evType || 'friendRequest', {
+                fromId: from.id,
+                fromName: from.username || from,
+                at: Date.now(),
+            });
+        });
+    }
+}
+
+function emitFriendUpdate(accountId) {
+    const target = activeAccounts.get(String(accountId));
+    if (target) {
+        target.socketIds.forEach((sid) => {
+            io.to(sid).emit('friendListChanged');
+        });
+    }
+}
+
+// Challenge a friend: the challenger creates a room, then invites the friend.
+app.post('/api/friends/challenge', requireAuth, async (req, res) => {
+    try {
+        const friendId = String(req.body.friendId || '');
+        // Verify they are actually friends
+        const [low, high] = friendKeys(req.account.id, friendId);
+        const check = await pool.query(
+            `SELECT 1 FROM friends WHERE user_id=$1 AND friend_id=$2 AND status='accepted'`,
+            [low, high]
+        );
+        if (!check.rows.length) {
+            return res.status(403).json({ ok: false, message: 'Not friends' });
+        }
+        const target = activeAccounts.get(friendId);
+        if (!target) {
+            return res.status(400).json({ ok: false, message: 'Your friend is offline' });
+        }
+        const roomCode = generateLobbyCode();
+        const game = createGame();
+        game.owner = {
+            playerId: req.account.id,
+            username: req.account.username,
+        };
+        games.set(roomCode, game);
+        // Send invite to all the friend's sockets
+        target.socketIds.forEach((sid) => {
+            io.to(sid).emit('challengeInvite', {
+                fromId: req.account.id,
+                fromName: req.account.username,
+                roomCode,
+                at: Date.now(),
+            });
+        });
+        res.json({ ok: true, roomCode });
+    } catch (error) {
+        console.error('Challenge error:', error);
+        res.status(500).json({ ok: false, message: 'Could not send challenge' });
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
 | SOCKET.IO AUTHENTICATION
 |--------------------------------------------------------------------------
 */
@@ -2271,6 +2513,14 @@ io.on(
 
         onlineUsers.set(socket.id, socket.data.username);
         io.emit('onlineCount', onlineUsers.size);
+
+        // Presence tracking for friends/challenges
+        const acctId = String(socket.data.accountId || '');
+        if (acctId) {
+            const entry = activeAccounts.get(acctId) || { username: socket.data.username, socketIds: new Set() };
+            entry.socketIds.add(socket.id);
+            activeAccounts.set(acctId, entry);
+        }
 
         socket.on(
             'joinRoom',
@@ -3036,6 +3286,14 @@ io.on(
 
                 onlineUsers.delete(socket.id);
                 io.emit('onlineCount', onlineUsers.size);
+
+                // Remove presence for friends/challenges
+                const acctId = String(socket.data.accountId || '');
+                if (acctId && activeAccounts.has(acctId)) {
+                    const entry = activeAccounts.get(acctId);
+                    entry.socketIds.delete(socket.id);
+                    if (entry.socketIds.size === 0) activeAccounts.delete(acctId);
+                }
 
                 matchQueue.delete(socket.id);
 

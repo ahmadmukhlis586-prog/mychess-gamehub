@@ -43,6 +43,7 @@ import LoginParticles from './components/LoginParticles';
 import EloRing from './components/EloRing';
 import VictoryParticles from './components/VictoryParticles';
 import AnnouncementsSection from './components/AnnouncementsSection';
+import FriendsPanel from './components/FriendsPanel';
 import { playCheckSound, playPurchaseSound } from './helpers';
 
 // ✅ IMPORT FROM CONFIG (SINGLE SOURCE OF TRUTH)
@@ -337,6 +338,11 @@ function App() {
   const [legalMoveSquares, setLegalMoveSquares] = useState([]);
   const [showLoginParticles, setShowLoginParticles] = useState(false);
   const [captureFlashActive, setCaptureFlashActive] = useState(false);
+  // Friends & Challenge
+  const [showFriends, setShowFriends] = useState(false);
+  const presenceSocketRef = useRef(null);
+  const [invite, setInvite] = useState(null); // { fromId, fromName, roomCode }
+  const [friendsRefresh, setFriendsRefresh] = useState(0);
  
   const isRegister = mode === 'register';
 
@@ -410,6 +416,42 @@ function App() {
       .then(data => { if (data.ok) setTopPlayers(data.players); })
       .catch(() => {});
   }, [account]);
+
+  // ---- PRESENCE SOCKET (friends & challenges) ----
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!account || !token) return;
+
+    const presence = io(SERVER_URL, {
+      transports: ['websocket', 'polling'],
+      auth: { token },
+      reconnection: true,
+    });
+    presenceSocketRef.current = presence;
+
+    presence.on('connect', () => {});
+    presence.on('friendRequest', (data) => {
+      setFriendsRefresh((n) => n + 1);
+    });
+    presence.on('friendAccepted', () => {
+      setFriendsRefresh((n) => n + 1);
+    });
+    presence.on('friendListChanged', () => {
+      setFriendsRefresh((n) => n + 1);
+    });
+    presence.on('challengeInvite', (data) => {
+      setInvite({
+        fromId: data.fromId,
+        fromName: data.fromName,
+        roomCode: data.roomCode,
+      });
+    });
+
+    return () => {
+      presence.disconnect();
+      presenceSocketRef.current = null;
+    };
+  }, [account?.id]);
 
   // ---- CLEANUP SOCKET ----
   useEffect(() => {
@@ -697,6 +739,25 @@ function App() {
     setMode(nextMode);
     clearMessage();
     setPassword('');
+  }
+
+  // ---- FRIENDS & CHALLENGE ----
+  function openFriends() {
+    setShowFriends(true);
+  }
+  function closeFriends() {
+    setShowFriends(false);
+  }
+  function acceptInvite() {
+    if (!invite) return;
+    const code = invite.roomCode;
+    setInvite(null);
+    setShowFriends(false);
+    setRoomCode(code);
+    connectToMatch(code);
+  }
+  function declineInvite() {
+    setInvite(null);
   }
 
   // ---- LOBBY FUNCTIONS ----
@@ -1550,6 +1611,20 @@ function App() {
         </div>
         <div className="mychess-action-arrow">→</div>
     </button>
+
+    {/* Friends */}
+    <button 
+        type="button" 
+        className="mychess-tournament-btn" 
+        onClick={openFriends}
+    >
+        <div className="mychess-action-icon">🤝</div>
+        <div className="mychess-action-content">
+            <strong>Friends</strong>
+            <span>Find friends, accept requests, and challenge them to a live match</span>
+        </div>
+        <div className="mychess-action-arrow">→</div>
+    </button>
 </section>
 </ScrollReveal>
 
@@ -1783,6 +1858,40 @@ function App() {
                   <button type="button" className="mychess-primary-button" onClick={cancelQuickMatch} style={{ marginTop: 24, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     Cancel
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* FRIENDS PANEL */}
+            {showFriends && (
+              <FriendsPanel
+                token={localStorage.getItem(TOKEN_KEY)}
+                onClose={closeFriends}
+                refreshKey={friendsRefresh}
+              />
+            )}
+
+            {/* CHALLENGE INVITE POPUP */}
+            {invite && (
+              <div
+                className="mychess-modal-backdrop"
+                style={{ position: 'fixed', inset: 0, zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(5,3,10,.84)', backdropFilter: 'blur(12px)' }}
+                onMouseDown={(event) => { if (event.target === event.currentTarget) declineInvite(); }}
+              >
+                <div className="mychess-modal" style={{ width: 'min(400px,100%)', textAlign: 'center' }}>
+                  <button type="button" className="mychess-modal-close" onClick={declineInvite}>×</button>
+                  <div className="mychess-modal-icon" style={{ background: 'linear-gradient(145deg, #22c55e, #15803d)', boxShadow: '0 12px 35px rgba(34,197,94,0.3)' }}>⚔️</div>
+                  <div className="mychess-modal-eyebrow" style={{ color: '#4ade80' }}>CHALLENGE</div>
+                  <h2>{invite.fromName || 'A friend'} challenged you!</h2>
+                  <p>They are waiting for you to join. Room #{invite.roomCode}</p>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button type="button" className="mychess-primary-button" onClick={acceptInvite}>
+                      Accept & Play <span>→</span>
+                    </button>
+                    <button type="button" className="mychess-primary-button" onClick={declineInvite} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      Decline
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
