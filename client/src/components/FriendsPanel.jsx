@@ -9,7 +9,7 @@ import { API_BASE } from '../config';
 // whenever presence socket events are received.
 // ============================================================
 
-export default function FriendsPanel({ token, onClose, refreshKey, dmIncoming, dmTick }) {
+export default function FriendsPanel({ token, onClose, refreshKey, dmIncoming, dmTick, onChallengeSent }) {
   const [tab, setTab] = useState('friends'); // 'friends' | 'add'
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -121,7 +121,10 @@ export default function FriendsPanel({ token, onClose, refreshKey, dmIncoming, d
         body: JSON.stringify({ friendId: userId }),
       });
       const d = await safeJson(r);
-      if (d.ok) setMsg(`Challenge sent! Waiting for them to accept. Room #${d.roomCode}`);
+      if (d.ok) {
+        setMsg(`Challenge sent! Waiting for them to accept. Room #${d.roomCode}`);
+        if (onChallengeSent && d.roomCode) onChallengeSent(d.roomCode);
+      }
       else setMsg(d.message || 'Could not send challenge.');
     } catch (e) {}
     setBusy('');

@@ -1880,6 +1880,12 @@ function App() {
                 refreshKey={friendsRefresh}
                 dmIncoming={dmIncoming}
                 dmTick={dmTick}
+                onChallengeSent={(code) => {
+                  setShowFriends(false);
+                  setInvite(null);
+                  setRoomCode(code);
+                  connectToMatch(code);
+                }}
               />
             )}
 
