@@ -48,6 +48,7 @@ import EloRing from './components/EloRing';
 import VictoryParticles from './components/VictoryParticles';
 import AnnouncementsSection from './components/AnnouncementsSection';
 import FriendsPanel from './components/FriendsPanel';
+import Avatar from './components/Avatar';
 import { playCheckSound, playPurchaseSound } from './helpers';
 
 // ✅ IMPORT FROM CONFIG (SINGLE SOURCE OF TRUTH)
@@ -1903,6 +1904,7 @@ function App() {
                 <div className="mychess-modal" style={{ width: 'min(400px,100%)', textAlign: 'center' }}>
                   <button type="button" className="mychess-modal-close" onClick={declineInvite}>×</button>
                   <div className="mychess-modal-icon" style={{ background: 'linear-gradient(145deg, #22c55e, #15803d)', boxShadow: '0 12px 35px rgba(34,197,94,0.3)' }}>⚔️</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6 }}><Avatar userId={invite.fromId} name={invite.fromName} size={56} /></div>
                   <div className="mychess-modal-eyebrow" style={{ color: '#4ade80' }}>CHALLENGE</div>
                   <h2>{invite.fromName || 'A friend'} challenged you!</h2>
                   <p>They are waiting for you to join. Room #{invite.roomCode}</p>

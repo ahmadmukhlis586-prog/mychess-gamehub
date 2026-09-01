@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { API_BASE } from '../config';
+import Avatar from './Avatar';
 
 // ============================================================
 // MYCHESS FRIENDS PANEL
@@ -221,6 +222,7 @@ export default function FriendsPanel({ token, onClose, refreshKey, dmIncoming, d
           <button type="button" className="mychess-modal-close" onClick={onClose}>×</button>
           <div className="friends-chat-head">
             <button type="button" className="friends-back" onClick={() => { setChatWith(null); setMessages([]); }}>← Back</button>
+            <Avatar userId={chatWith.id} name={chatWith.username} size={32} />
             <div>
               <div className="friends-chat-title">{chatWith.username}</div>
               <div className="friends-sub">{chatWith.online ? 'Online' : 'Offline'}</div>
@@ -292,8 +294,11 @@ export default function FriendsPanel({ token, onClose, refreshKey, dmIncoming, d
                 {requests.map((r) => (
                   <div key={r.user_id} className="friends-row">
                     <div className="friends-info">
-                      <div className="friends-name">{r.username} <span className={`friends-dot ${r.online ? 'online' : ''}`} /></div>
-                      <div className="friends-sub">ELO {r.elo}</div>
+                      <Avatar userId={r.user_id} name={r.username} size={38} />
+                      <div>
+                        <div className="friends-name">{r.username} <span className={`friends-dot ${r.online ? 'online' : ''}`} /></div>
+                        <div className="friends-sub">ELO {r.elo}</div>
+                      </div>
                     </div>
                     <div className="friends-actions">
                       <button type="button" className="mychess-shop-button" onClick={() => acceptRequest(r.user_id)} disabled={busy === 'a' + r.user_id}>
@@ -316,8 +321,11 @@ export default function FriendsPanel({ token, onClose, refreshKey, dmIncoming, d
               {friends.map((f) => (
                 <div key={f.id} className="friends-row">
                   <div className="friends-info">
-                    <div className="friends-name">{f.username} <span className={`friends-dot ${f.online ? 'online' : ''}`} /></div>
-                    <div className="friends-sub">{f.online ? 'Online' : 'Offline'} · ELO {f.elo}</div>
+                    <Avatar userId={f.id} name={f.username} size={38} />
+                    <div>
+                      <div className="friends-name">{f.username} <span className={`friends-dot ${f.online ? 'online' : ''}`} /></div>
+                      <div className="friends-sub">{f.online ? 'Online' : 'Offline'} · ELO {f.elo}</div>
+                    </div>
                   </div>
                   <div className="friends-actions">
                     <button type="button" className="mychess-shop-button" onClick={() => challengeFriend(f.id)} disabled={busy === 'c' + f.id}>
@@ -357,8 +365,11 @@ export default function FriendsPanel({ token, onClose, refreshKey, dmIncoming, d
                 {results.map((u) => (
                   <div key={u.id} className="friends-row">
                     <div className="friends-info">
-                      <div className="friends-name">{u.username}</div>
-                      <div className="friends-sub">ELO {u.elo}</div>
+                      <Avatar userId={u.id} name={u.username} size={38} />
+                      <div>
+                        <div className="friends-name">{u.username}</div>
+                        <div className="friends-sub">ELO {u.elo}</div>
+                      </div>
                     </div>
                     <button type="button" className="mychess-shop-button" onClick={() => sendRequest(u.id)} disabled={busy === u.id || u.id === 'self'}>
                       {busy === u.id ? '...' : 'Add'}

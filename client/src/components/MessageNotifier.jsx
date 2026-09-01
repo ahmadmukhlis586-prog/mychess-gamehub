@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { io } from 'socket.io-client';
 import { SERVER_URL, API_BASE, TOKEN_KEY } from '../config';
+import Avatar from './Avatar';
 
 // ============================================================
 // MYCHESS MESSAGE NOTIFIER — floating chat bubble
@@ -189,7 +190,7 @@ export default function MessageNotifier() {
                 {unread === 0 && <div className="mn-empty">No new messages</div>}
                 {senders.map(s => (
                   <div key={s.sender_id} className="mn-item" onClick={() => openChat(s)}>
-                    <div className="mn-avatar">{(s.sender_name || '?')[0]}</div>
+                    <Avatar userId={s.sender_id} name={s.sender_name} size={38} />
                     <div className="mn-item-info">
                       <div className="mn-item-name">{s.sender_name}</div>
                       <div className="mn-item-count">{s.count} new message{s.count > 1 ? 's' : ''}</div>
@@ -206,6 +207,7 @@ export default function MessageNotifier() {
             <>
               <div className="mn-chat-head">
                 <button type="button" className="mn-back" onClick={() => { markRead(chatWith.sender_id); setChatWith(null); setMessages([]); }}>←</button>
+                <Avatar userId={chatWith.sender_id} name={chatWith.sender_name} size={30} />
                 <div className="mn-chat-title">{chatWith.sender_name}</div>
               </div>
               {chatError && <div className="mn-error">{chatError}</div>}
