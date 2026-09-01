@@ -278,34 +278,40 @@ const ProfileThemes = ({ token, onEloUpdate }) => {
                 return (
                   <div key={theme.id} className={`pth-card ${equipped ? 'pth-card-equipped' : ''}`}
                        onMouseEnter={() => showProfilePreview(theme)} onMouseLeave={() => setPreview(null)}>
-                    <div
-                      className="pth-card-preview"
-                      style={{ background: theme.gradient || 'linear-gradient(135deg, #1a1a2e, #16213e)' }}
-                    />
-                    <div className="pth-card-name">{theme.name}</div>
-                    <div className="pth-card-cost">
-                      {equipped ? 'Equipped' : owned ? 'Owned' : theme.cost_elo === 0 ? 'Free' : `${theme.cost_elo} ELO`}
+                    <div className="pth-card-preview" style={{ background: theme.gradient || 'linear-gradient(135deg, #1a1a2e, #16213e)' }}>
+                      {/* ADDED: full mini profile card so you see the actual on-profile look */}
+                      <div className="pth-card-mini-profile" style={{ background: theme.gradient || 'linear-gradient(135deg,#1a1a2e,#16213e)' }}>
+                        <div className="pth-card-mini-avatar">{theme.name ? theme.name.charAt(0).toUpperCase() : 'P'}</div>
+                        <div className="pth-card-mini-name">Player</div>
+                        <div className="pth-card-mini-elo">1200</div>
+                      </div>
                     </div>
-                    <div className="pth-card-actions">
-                      {!owned ? (
-                        <button
-                          type="button"
-                          className="pth-buy-btn"
-                          onClick={() => handleBuyProfile(theme)}
-                          disabled={buying === theme.id}
-                        >
-                          {buying === theme.id ? 'Buying...' : 'Buy'}
-                        </button>
-                      ) : !equipped ? (
-                        <button
-                          type="button"
-                          className="pth-equip-btn"
-                          onClick={() => handleEquipProfile(theme)}
-                          disabled={equipping === theme.id}
-                        >
-                          {equipping === theme.id ? 'Equipping...' : 'Equip'}
-                        </button>
-                      ) : null}
+                    <div className="pth-card-body">
+                      <div className="pth-card-name">{theme.name}</div>
+                      <div className="pth-card-meta">{equipped ? 'In use' : owned ? 'Owned' : theme.cost_elo === 0 ? 'Free' : `${theme.cost_elo} ELO`}</div>
+                      <div className="pth-card-action">
+                        {!owned ? (
+                          <button
+                            type="button"
+                            className="pth-text-action"
+                            onClick={() => handleBuyProfile(theme)}
+                            disabled={buying === theme.id}
+                          >
+                            {buying === theme.id ? 'Unlocking…' : `Unlock${theme.cost_elo > 0 ? ` · ${theme.cost_elo} ELO` : ''}`}
+                          </button>
+                        ) : !equipped ? (
+                          <button
+                            type="button"
+                            className="pth-text-action pth-text-action-equip"
+                            onClick={() => handleEquipProfile(theme)}
+                            disabled={equipping === theme.id}
+                          >
+                            {equipping === theme.id ? 'Applying…' : 'Use this theme'}
+                          </button>
+                        ) : (
+                          <span className="pth-text-state">✓ Applied</span>
+                        )}
+                      </div>
                     </div>
                     </div>
                   );
@@ -338,30 +344,32 @@ const ProfileThemes = ({ token, onEloUpdate }) => {
                         <div className="pth-board-sq" style={{ backgroundColor: theme.light_sq || '#f0d9b5' }} />
                       </div>
                     </div>
-                    <div className="pth-card-name">{theme.name}</div>
-                    <div className="pth-card-cost">
-                      {equipped ? 'Equipped' : owned ? 'Owned' : theme.cost_elo === 0 ? 'Free' : `${theme.cost_elo} ELO`}
-                    </div>
-                    <div className="pth-card-actions">
-                      {!owned ? (
-                        <button
-                          type="button"
-                          className="pth-buy-btn"
-                          onClick={() => handleBuyBoard(theme)}
-                          disabled={buying === theme.id}
-                        >
-                          {buying === theme.id ? 'Buying...' : 'Buy'}
-                        </button>
-                      ) : !equipped ? (
-                        <button
-                          type="button"
-                          className="pth-equip-btn"
-                          onClick={() => handleEquipBoard(theme)}
-                          disabled={equipping === theme.id}
-                        >
-                          {equipping === theme.id ? 'Equipping...' : 'Equip'}
-                        </button>
-                      ) : null}
+                    <div className="pth-card-body">
+                      <div className="pth-card-name">{theme.name}</div>
+                      <div className="pth-card-meta">{equipped ? 'In use' : owned ? 'Owned' : theme.cost_elo === 0 ? 'Free' : `${theme.cost_elo} ELO`}</div>
+                      <div className="pth-card-action">
+                        {!owned ? (
+                          <button
+                            type="button"
+                            className="pth-text-action"
+                            onClick={() => handleBuyBoard(theme)}
+                            disabled={buying === theme.id}
+                          >
+                            {buying === theme.id ? 'Unlocking…' : `Unlock${theme.cost_elo > 0 ? ` · ${theme.cost_elo} ELO` : ''}`}
+                          </button>
+                        ) : !equipped ? (
+                          <button
+                            type="button"
+                            className="pth-text-action pth-text-action-equip"
+                            onClick={() => handleEquipBoard(theme)}
+                            disabled={equipping === theme.id}
+                          >
+                            {equipping === theme.id ? 'Applying…' : 'Use this theme'}
+                          </button>
+                        ) : (
+                          <span className="pth-text-state">✓ Applied</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   );
