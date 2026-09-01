@@ -16,8 +16,19 @@ const AdminConfigPage = ({ token, onBack }) => {
   const [announcementImage, setAnnouncementImage] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // ADDED: state for the Profile Themes + Board Themes admin tabs
+  const [profileThemes, setProfileThemes] = useState([]);
+  const [boardThemes, setBoardThemes] = useState([]);
+  const [profileForm, setProfileForm] = useState({});
+  const [boardForm, setBoardForm] = useState({});
+  const [editingProfile, setEditingProfile] = useState(null);
+  const [editingBoard, setEditingBoard] = useState(null);
+  const [themesLoading, setThemesLoading] = useState(false);
+
   useEffect(() => {
     fetchData();
+    fetchProfileThemeList();
+    fetchBoardThemeList();
   }, []);
 
   // Auto-hide success overlay after 3 seconds
@@ -95,8 +106,8 @@ const AdminConfigPage = ({ token, onBack }) => {
           setEditingItem(null);
           setAudioFile(null);
           setCoverFile(null);
-          setShowSuccess(true); // ✅ Show Green Overlay
-          fetchData(); // ✅ IMMEDIATELY FETCH AND SHOW NEW ITEM
+          setShowSuccess(true); // âœ… Show Green Overlay
+          fetchData(); // âœ… IMMEDIATELY FETCH AND SHOW NEW ITEM
         } else {
           const err = await response.json();
           alert(`Failed to save album: ${err.message || 'Unknown error'}`);
@@ -171,8 +182,8 @@ const AdminConfigPage = ({ token, onBack }) => {
       });
       setFormData({});
       setEditingItem(null);
-      setShowSuccess(true); // ✅ Show Green Overlay
-      fetchData(); // ✅ IMMEDIATELY FETCH AND SHOW NEW ITEM
+      setShowSuccess(true); // âœ… Show Green Overlay
+      fetchData(); // âœ… IMMEDIATELY FETCH AND SHOW NEW ITEM
     } catch (error) {
       console.error('Save error:', error);
     }
@@ -187,8 +198,8 @@ const AdminConfigPage = ({ token, onBack }) => {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
-      setShowSuccess(true); // ✅ Show Green Overlay
-      fetchData(); // ✅ IMMEDIATELY REFRESH LIST
+      setShowSuccess(true); // âœ… Show Green Overlay
+      fetchData(); // âœ… IMMEDIATELY REFRESH LIST
     } catch (error) {
       console.error('Delete error:', error);
     }
@@ -217,9 +228,127 @@ const AdminConfigPage = ({ token, onBack }) => {
     return map[activeTab] || [];
   };
 
+  // =========================================================================
+  // âœ… ADDED: admin handlers for PROFILE THEMES tab (additive, dedicated funcs)
+  // =========================================================================
+  const fetchProfileThemeList = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/profile-themes`, { headers: { Authorization: `Bearer ${token}` } });
+      const result = await res.json();
+      if (result.ok) setProfileThemes(result.themes || []);
+    } catch (error) {
+      console.error('Error fetching profile themes:', error);
+    }
+  };
+
+  const handleProfileThemeChange = (e) => {
+    const { name, value } = e.target;
+    setProfileForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditProfileTheme = (item) => {
+    setEditingProfile(item);
+    setProfileForm(item);
+  };
+
+  const handleProfileThemeSave = async (e) => {
+    e.preventDefault();
+    const isEditing = !!editingProfile;
+    const url = isEditing
+      ? `${API_BASE}/admin/profile-themes/update/${editingProfile.id}`
+      : `${API_BASE}/admin/profile-themes/create`;
+    const method = isEditing ? 'PUT' : 'POST';
+    try {
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(profileForm)
+      });
+      setProfileForm({});
+      setEditingProfile(null);
+      setShowSuccess(true);
+      fetchProfileThemeList();
+    } catch (error) {
+      console.error('Profile theme save error:', error);
+    }
+  };
+
+  const handleProfileThemeDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this profile theme?')) return;
+    try {
+      await fetch(`${API_BASE}/admin/profile-themes/delete/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShowSuccess(true);
+      fetchProfileThemeList();
+    } catch (error) {
+      console.error('Profile theme delete error:', error);
+    }
+  };
+
+  // =========================================================================
+  // âœ… ADDED: admin handlers for BOARD THEMES tab (additive, dedicated funcs)
+  // =========================================================================
+  const fetchBoardThemeList = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/board-themes`, { headers: { Authorization: `Bearer ${token}` } });
+      const result = await res.json();
+      if (result.ok) setBoardThemes(result.themes || []);
+    } catch (error) {
+      console.error('Error fetching board themes:', error);
+    }
+  };
+
+  const handleBoardThemeChange = (e) => {
+    const { name, value } = e.target;
+    setBoardForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditBoardTheme = (item) => {
+    setEditingBoard(item);
+    setBoardForm(item);
+  };
+
+  const handleBoardThemeSave = async (e) => {
+    e.preventDefault();
+    const isEditing = !!editingBoard;
+    const url = isEditing
+      ? `${API_BASE}/admin/board-themes/update/${editingBoard.id}`
+      : `${API_BASE}/admin/board-themes/create`;
+    const method = isEditing ? 'PUT' : 'POST';
+    try {
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(boardForm)
+      });
+      setBoardForm({});
+      setEditingBoard(null);
+      setShowSuccess(true);
+      fetchBoardThemeList();
+    } catch (error) {
+      console.error('Board theme save error:', error);
+    }
+  };
+
+  const handleBoardThemeDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this board theme?')) return;
+    try {
+      await fetch(`${API_BASE}/admin/board-themes/delete/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShowSuccess(true);
+      fetchBoardThemeList();
+    } catch (error) {
+      console.error('Board theme delete error:', error);
+    }
+  };
+
   return (
     <div className="chess-ai-page">
-      {/* ✅ Animated Success Toast */}
+      {/* âœ… Animated Success Toast */}
       {showSuccess && (
         <div className="admin-success-toast">
           <span className="admin-success-check">
@@ -239,28 +368,104 @@ const AdminConfigPage = ({ token, onBack }) => {
 
       <header className="chess-tips-header">
         <div className="chess-tips-brand">
-          <div className="mychess-logo-mark">🔧</div>
+          <div className="mychess-logo-mark">ðŸ”§</div>
           <div>
             <div className="chess-tips-brand-name">ADMIN CONFIG</div>
             <div className="chess-tips-brand-subtitle">MYCHESS CONTROL PANEL</div>
           </div>
         </div>
-        <button type="button" className="mychess-home-logout" onClick={onBack}>← Back to Dashboard</button>
+        <button type="button" className="mychess-home-logout" onClick={onBack}>â† Back to Dashboard</button>
       </header>
 
       <main className="chess-ai-main" style={{ maxWidth: '1200px', margin: '0 auto', paddingTop: '20px' }}>
         {/* Neon Tab Switcher */}
         <div className="admin-tabs-neon">
-          <button className={`admin-tab ${activeTab === 'announcements' ? 'active' : ''}`} onClick={() => { setActiveTab('announcements'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>📰 Announcements</button>
-          <button className={`admin-tab ${activeTab === 'quests' ? 'active' : ''}`} onClick={() => { setActiveTab('quests'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>🎯 Quests</button>
-          <button className={`admin-tab ${activeTab === 'shop' ? 'active' : ''}`} onClick={() => { setActiveTab('shop'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>🛒 Shop Items</button>
-          <button className={`admin-tab ${activeTab === 'musicAlbums' ? 'active' : ''}`} onClick={() => { setActiveTab('musicAlbums'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>🎵 Music Albums</button>
+          <button className={`admin-tab ${activeTab === 'announcements' ? 'active' : ''}`} onClick={() => { setActiveTab('announcements'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>ðŸ“° Announcements</button>
+          <button className={`admin-tab ${activeTab === 'quests' ? 'active' : ''}`} onClick={() => { setActiveTab('quests'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>ðŸŽ¯ Quests</button>
+          <button className={`admin-tab ${activeTab === 'shop' ? 'active' : ''}`} onClick={() => { setActiveTab('shop'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>ðŸ›’ Shop Items</button>
+          <button className={`admin-tab ${activeTab === 'musicAlbums' ? 'active' : ''}`} onClick={() => { setActiveTab('musicAlbums'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>ðŸŽµ Music Albums</button>
+          <button className={`admin-tab ${activeTab === 'profileThemes' ? 'active' : ''}`} onClick={() => { setActiveTab('profileThemes'); setEditingItem(null); setFormData({}); setEditingProfile(null); setProfileForm({}); fetchProfileThemeList(); }}>ðŸŽ¨ Profile Themes</button>
+          <button className={`admin-tab ${activeTab === 'boardThemes' ? 'active' : ''}`} onClick={() => { setActiveTab('boardThemes'); setEditingItem(null); setFormData({}); setEditingBoard(null); setBoardForm({}); fetchBoardThemeList(); }}>â™Ÿï¸ Board Themes</button>
         </div>
 
-        {/* Glass Form Card */}
+        {/* ADDED: Profile Themes editor (shown only on its tab) */}
+        {activeTab === 'profileThemes' && (
+          <div className="admin-glass-card">
+            <h3 className="admin-form-title">
+              {editingProfile ? `Edit Profile Theme` : `Create New Profile Theme`}
+            </h3>
+            <form onSubmit={handleProfileThemeSave} className="admin-form-grid">
+              <div className="admin-input-group">
+                <label>Name</label>
+                <input type="text" name="name" placeholder="Crimson" value={profileForm.name || ''} onChange={handleProfileThemeChange} required />
+              </div>
+              <div className="admin-input-group">
+                <label>CSS Class</label>
+                <input type="text" name="css_class" placeholder="pt-crimson" value={profileForm.css_class || ''} onChange={handleProfileThemeChange} required />
+              </div>
+              <div className="admin-input-group full-width">
+                <label>Gradient</label>
+                <input type="text" name="gradient" placeholder="linear-gradient(135deg,#dc2626,#991b1b)" value={profileForm.gradient || ''} onChange={handleProfileThemeChange} required />
+              </div>
+              <div className="admin-input-group">
+                <label>Preview URL (optional)</label>
+                <input type="text" name="preview_url" placeholder="https://..." value={profileForm.preview_url || ''} onChange={handleProfileThemeChange} />
+              </div>
+              <div className="admin-input-group">
+                <label>Cost (ELO)</label>
+                <input type="number" name="cost_elo" placeholder="50" value={profileForm.cost_elo ?? ''} onChange={handleProfileThemeChange} />
+              </div>
+              <div className="admin-form-actions full-width">
+                <button type="submit" className="admin-save-btn">{editingProfile ? 'Update Theme' : 'Create Theme'}</button>
+                {editingProfile && <button type="button" className="admin-cancel-btn" onClick={() => { setEditingProfile(null); setProfileForm({}); }}>Cancel</button>}
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* ADDED: Board Themes editor (shown only on its tab) */}
+        {activeTab === 'boardThemes' && (
+          <div className="admin-glass-card">
+            <h3 className="admin-form-title">
+              {editingBoard ? `Edit Board Theme` : `Create New Board Theme`}
+            </h3>
+            <form onSubmit={handleBoardThemeSave} className="admin-form-grid">
+              <div className="admin-input-group">
+                <label>Name</label>
+                <input type="text" name="name" placeholder="Neon Glow" value={boardForm.name || ''} onChange={handleBoardThemeChange} required />
+              </div>
+              <div className="admin-input-group">
+                <label>CSS Class</label>
+                <input type="text" name="css_class" placeholder="abt-neon" value={boardForm.css_class || ''} onChange={handleBoardThemeChange} required />
+              </div>
+              <div className="admin-input-group">
+                <label>Animation CSS</label>
+                <input type="text" name="animation_css" placeholder="abt-neon-anim" value={boardForm.animation_css || ''} onChange={handleBoardThemeChange} />
+              </div>
+              <div className="admin-input-group">
+                <label>Light Square (hex)</label>
+                <input type="text" name="light_sq" placeholder="#1a1a2e" value={boardForm.light_sq || ''} onChange={handleBoardThemeChange} />
+              </div>
+              <div className="admin-input-group">
+                <label>Dark Square (hex)</label>
+                <input type="text" name="dark_sq" placeholder="#0d1117" value={boardForm.dark_sq || ''} onChange={handleBoardThemeChange} />
+              </div>
+              <div className="admin-input-group">
+                <label>Cost (ELO)</label>
+                <input type="number" name="cost_elo" placeholder="100" value={boardForm.cost_elo ?? ''} onChange={handleBoardThemeChange} />
+              </div>
+              <div className="admin-form-actions full-width">
+                <button type="submit" className="admin-save-btn">{editingBoard ? 'Update Theme' : 'Create Theme'}</button>
+                {editingBoard && <button type="button" className="admin-cancel-btn" onClick={() => { setEditingBoard(null); setBoardForm({}); }}>Cancel</button>}
+              </div>
+            </form>
+          </div>
+        )}
+
+        {activeTab !== 'profileThemes' && activeTab !== 'boardThemes' && (
         <div className="admin-glass-card">
           <h3 className="admin-form-title">
-            {editingItem ? `✏️ Edit ${activeTab === 'musicAlbums' ? 'Album' : activeTab === 'announcements' ? 'Announcement' : activeTab === 'quests' ? 'Quest' : 'Shop Item'}` : `➕ Create New ${activeTab === 'musicAlbums' ? 'Album' : activeTab === 'announcements' ? 'Announcement' : activeTab === 'quests' ? 'Quest' : 'Shop Item'}`}
+            {editingItem ? `âœï¸ Edit ${activeTab === 'musicAlbums' ? 'Album' : activeTab === 'announcements' ? 'Announcement' : activeTab === 'quests' ? 'Quest' : 'Shop Item'}` : `âž• Create New ${activeTab === 'musicAlbums' ? 'Album' : activeTab === 'announcements' ? 'Announcement' : activeTab === 'quests' ? 'Quest' : 'Shop Item'}`}
           </h3>
           <form onSubmit={handleSave} className="admin-form-grid">
             {activeTab === 'announcements' && (
@@ -364,7 +569,7 @@ const AdminConfigPage = ({ token, onBack }) => {
               </>
             )}
             
-            {/* ✅ UPDATED MUSIC ALBUM SECTION (File Uploads) */}
+            {/* âœ… UPDATED MUSIC ALBUM SECTION (File Uploads) */}
             {activeTab === 'musicAlbums' && (
               <>
                 <div className="admin-input-group">
@@ -396,20 +601,68 @@ const AdminConfigPage = ({ token, onBack }) => {
             </div>
           </form>
         </div>
+        )}
+
+        {/* ADDED: Profile Themes list (shown only on its tab) */}
+        {activeTab === 'profileThemes' && (
+          <div className="admin-list-section">
+            <h3 className="admin-list-title">ðŸ“‚ Existing Profile Themes</h3>
+            {themesLoading ? <p className="admin-empty">Loading...</p> : profileThemes.length === 0 ? <p className="admin-empty">No profile themes found.</p> : (
+              <div className="admin-list-grid">
+                {profileThemes.map(item => (
+                  <div key={item.id} className="admin-list-item">
+                    <div className="admin-item-info">
+                      <span className="admin-item-name">{item.name}</span>
+                      <span className="admin-item-meta">{item.cost_elo == null || item.cost_elo === 0 ? 'Free' : `${item.cost_elo} ELO`} Â· {item.css_class || 'No class'}</span>
+                    </div>
+                    <div className="admin-item-actions">
+                      <button className="admin-edit-btn" onClick={() => handleEditProfileTheme(item)}>âœï¸ Edit</button>
+                      <button className="admin-delete-btn" onClick={() => handleProfileThemeDelete(item.id)}>ðŸ—‘ï¸</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ADDED: Board Themes list (shown only on its tab) */}
+        {activeTab === 'boardThemes' && (
+          <div className="admin-list-section">
+            <h3 className="admin-list-title">ðŸ“‚ Existing Board Themes</h3>
+            {themesLoading ? <p className="admin-empty">Loading...</p> : boardThemes.length === 0 ? <p className="admin-empty">No board themes found.</p> : (
+              <div className="admin-list-grid">
+                {boardThemes.map(item => (
+                  <div key={item.id} className="admin-list-item">
+                    <div className="admin-item-info">
+                      <span className="admin-item-name">{item.name}</span>
+                      <span className="admin-item-meta">{item.cost_elo == null || item.cost_elo === 0 ? 'Free' : `${item.cost_elo} ELO`} Â· {item.light_sq || '?'}/{item.dark_sq || '?'}</span>
+                    </div>
+                    <div className="admin-item-actions">
+                      <button className="admin-edit-btn" onClick={() => handleEditBoardTheme(item)}>âœï¸ Edit</button>
+                      <button className="admin-delete-btn" onClick={() => handleBoardThemeDelete(item.id)}>ðŸ—‘ï¸</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* List Section */}
+        {activeTab !== 'profileThemes' && activeTab !== 'boardThemes' && (
         <div className="admin-list-section">
-          <h3 className="admin-list-title">📂 Existing {activeTab === 'musicAlbums' ? 'Music Albums' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
+          <h3 className="admin-list-title">ðŸ“‚ Existing {activeTab === 'musicAlbums' ? 'Music Albums' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
           {loading ? <p className="admin-empty">Loading...</p> : getItems().length === 0 ? <p className="admin-empty">No items found.</p> : (
             <div className="admin-list-grid">
               {getItems().map(item => {
                 const id = item.id || item.announcement_id || item.item_id;
                 const name = activeTab === 'shop' ? item.name : activeTab === 'quests' ? item.quest_name : activeTab === 'musicAlbums' ? item.title : item.title;
-                const meta = activeTab === 'shop' ? `${item.price} ELO` : activeTab === 'quests' ? `+${item.reward_elo} ELO` : activeTab === 'musicAlbums' ? `🎵 ${item.audio_file || 'Audio'}` : item.category;
+                const meta = activeTab === 'shop' ? `${item.price} ELO` : activeTab === 'quests' ? `+${item.reward_elo} ELO` : activeTab === 'musicAlbums' ? `ðŸŽµ ${item.audio_file || 'Audio'}` : item.category;
                 
                 return (
                   <div key={id} className="admin-list-item">
-                    {/* ✅ Display Cover Image if it exists */}
+                    {/* âœ… Display Cover Image if it exists */}
                     {activeTab === 'musicAlbums' && item.cover_image && (
   <img 
     src={item.cover_image.startsWith('http') ? item.cover_image : `${SERVER_URL}${item.cover_image}`} 
@@ -422,8 +675,8 @@ const AdminConfigPage = ({ token, onBack }) => {
                       <span className="admin-item-meta">{meta}</span>
                     </div>
                     <div className="admin-item-actions">
-                      <button className="admin-edit-btn" onClick={() => handleEdit(item)}>✏️ Edit</button>
-                      <button className="admin-delete-btn" onClick={() => handleDelete(id)}>🗑️</button>
+                      <button className="admin-edit-btn" onClick={() => handleEdit(item)}>âœï¸ Edit</button>
+                      <button className="admin-delete-btn" onClick={() => handleDelete(id)}>ðŸ—‘ï¸</button>
                     </div>
                   </div>
                 );
@@ -431,6 +684,7 @@ const AdminConfigPage = ({ token, onBack }) => {
             </div>
           )}
         </div>
+        )}
       </main>
     </div>
   );

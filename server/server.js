@@ -4468,6 +4468,106 @@ app.delete('/api/admin/music/delete/:id', requireAuth, requireAdmin, async (req,
     }
 });
 
+// ===========================================================================
+// ✅ ADDED: Admin CRUD for PROFILE THEMES (profile_themes table)
+// Fully additive helpers for the Admin Config Panel -> Profile Themes tab.
+// ===========================================================================
+app.get('/api/admin/profile-themes', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM profile_themes ORDER BY cost_elo ASC, id ASC');
+        res.json({ ok: true, themes: result.rows });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Failed to fetch profile themes' });
+    }
+});
+
+app.post('/api/admin/profile-themes/create', requireAuth, requireAdmin, async (req, res) => {
+    const { name, css_class, gradient, preview_url, cost_elo } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO profile_themes (name, css_class, gradient, preview_url, cost_elo) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [name, css_class, gradient, preview_url || null, cost_elo == null ? 0 : Number(cost_elo)]
+        );
+        res.json({ ok: true, theme: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Failed to create profile theme' });
+    }
+});
+
+app.put('/api/admin/profile-themes/update/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { name, css_class, gradient, preview_url, cost_elo } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE profile_themes SET name = $1, css_class = $2, gradient = $3, preview_url = $4, cost_elo = $5 WHERE id = $6 RETURNING *',
+            [name, css_class, gradient, preview_url || null, cost_elo == null ? 0 : Number(cost_elo), id]
+        );
+        res.json({ ok: true, theme: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Failed to update profile theme' });
+    }
+});
+
+app.delete('/api/admin/profile-themes/delete/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM profile_themes WHERE id = $1', [id]);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Failed to delete profile theme' });
+    }
+});
+
+// ===========================================================================
+// ✅ ADDED: Admin CRUD for BOARD THEMES (animated_board_themes table)
+// Fully additive helpers for the Admin Config Panel -> Board Themes tab.
+// ===========================================================================
+app.get('/api/admin/board-themes', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM animated_board_themes ORDER BY cost_elo ASC, id ASC');
+        res.json({ ok: true, themes: result.rows });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Failed to fetch board themes' });
+    }
+});
+
+app.post('/api/admin/board-themes/create', requireAuth, requireAdmin, async (req, res) => {
+    const { name, css_class, animation_css, light_sq, dark_sq, cost_elo } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO animated_board_themes (name, css_class, animation_css, light_sq, dark_sq, cost_elo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [name, css_class, animation_css || 'none', light_sq || '#f0d9b5', dark_sq || '#b58863', cost_elo == null ? 0 : Number(cost_elo)]
+        );
+        res.json({ ok: true, theme: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Failed to create board theme' });
+    }
+});
+
+app.put('/api/admin/board-themes/update/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { name, css_class, animation_css, light_sq, dark_sq, cost_elo } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE animated_board_themes SET name = $1, css_class = $2, animation_css = $3, light_sq = $4, dark_sq = $5, cost_elo = $6 WHERE id = $7 RETURNING *',
+            [name, css_class, animation_css || 'none', light_sq || '#f0d9b5', dark_sq || '#b58863', cost_elo == null ? 0 : Number(cost_elo), id]
+        );
+        res.json({ ok: true, theme: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Failed to update board theme' });
+    }
+});
+
+app.delete('/api/admin/board-themes/delete/:id', requireAuth, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM animated_board_themes WHERE id = $1', [id]);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: 'Failed to delete board theme' });
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | ✅ SERVE REACT FRONTEND (Production Build)
