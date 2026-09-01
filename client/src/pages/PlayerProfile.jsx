@@ -9,6 +9,7 @@ const PlayerProfile = ({ onBack }) => {
   const [recentMatches, setRecentMatches] = useState([]);
   const [totalAch, setTotalAch] = useState(0);
   const [unlockedAch, setUnlockedAch] = useState(0);
+  const [avatar, setAvatar] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,10 @@ const PlayerProfile = ({ onBack }) => {
           setUnlockedAch(d.unlockedAchievements);
         }
       })
+      .catch(() => {});
+    fetch(`${API_BASE}/avatar/${userId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (d.ok && d.avatar) setAvatar(d.avatar); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [userId]);
@@ -43,7 +48,7 @@ const PlayerProfile = ({ onBack }) => {
 
       <main className="pp-main">
         <div className="pp-card">
-          <div className="pp-avatar">{profile.username?.charAt(0).toUpperCase()}</div>
+          <div className="pp-avatar">{avatar ? <img src={avatar} alt={profile.username} className="pp-avatar-img" /> : profile.username?.charAt(0).toUpperCase()}</div>
           <h1 className="pp-name">{profile.username}</h1>
           <div className="pp-since">Member since {memberSince}</div>
 

@@ -24,6 +24,9 @@ import ChessAIPage from './pages/ChessAIPage';
 import AdminConfigPage from './pages/AdminConfigPage';
 import AchievementsPage from './pages/AchievementsPage';
 import PlayerProfile from './pages/PlayerProfile';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import AccountSettingsPage from './pages/AccountSettingsPage';
 import CinematicHero from './components/CinematicHero';
 import NotificationToast from './components/NotificationToast';
 import MusicCarousel from './components/MusicCarousel';
@@ -1505,6 +1508,7 @@ function App() {
                   }} />
 
                   <button type="button" className="mychess-home-logout" onClick={handleLogout}>Logout</button>
+                  <button type="button" className="mychess-home-settings" onClick={() => navigate('/settings')}>Settings</button>
                 </div>
               </div>
             </header>
@@ -1967,6 +1971,11 @@ function App() {
                     <label>PASSWORD</label>
                     <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={isRegister ? 'Minimum 8 characters' : 'Enter your password'} autoComplete={isRegister ? 'new-password' : 'current-password'} disabled={loading} />
                   </div>
+                  {!isRegister && (
+                    <div className="mychess-forgot">
+                      <button type="button" className="mychess-forgot-link" onClick={() => navigate('/forgot-password')}>Forgot password?</button>
+                    </div>
+                  )}
                   {message && <div className={`mychess-message ${messageType}`}>{message}</div>}
                   <button type="submit" className="mychess-primary-button" disabled={loading}>
                     {loading ? (<><span className="mychess-spinner" />Processing...</>) : (<>{isRegister ? 'Create MYCHESS Account' : 'Enter MYCHESS'}<span>→</span></>)}
@@ -2035,6 +2044,17 @@ function App() {
           if (data.ok) setAccount(data.account);
         } catch (e) {}
       }} />} />
+
+      {/* Forgot Password Page (public) */}
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+      {/* Reset Password Page (public) */}
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* Account Settings Page (logged-in) */}
+      <Route path="/settings" element={
+        <AccountSettingsPage token={localStorage.getItem(TOKEN_KEY)} account={account} />
+      } />
 
     </Routes>
   );

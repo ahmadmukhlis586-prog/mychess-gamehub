@@ -21,10 +21,16 @@ const multer = require('multer'); // ✅ ADDED
 const { pool } = require('./db/connection');
 const db = require('./db/helpers');
 const cloudStorage = require('./db/storage'); // ✅ Cloud storage (Supabase) with local fallback
+const { registerAuthExtra } = require('./auth-extra'); // ✅ ADDED (auth extras: rate limit, password reset, avatar) — additive
 
 const app = express();
 app.use(cors()); 
 app.use(express.json());
+
+// ✅ ADDED (auth extras: rate limiting on login/register + trust proxy) — purely additive
+const { applyEarlyMiddleware } = require('./auth-extra');
+applyEarlyMiddleware(app);
+
 const server = http.createServer(app);
 
 // Add static file serving for assets
@@ -4430,6 +4436,17 @@ app.delete('/api/admin/music/delete/:id', requireAuth, requireAdmin, async (req,
 
 // Serve static files from the client/dist folder
 app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// ✅ ADDED (auth extras: rate limiting, trust proxy, password reset, change password, avatar upload) — purely additive
+registerAuthExtra({
+    app,
+    pool,
+    db,
+    hashPassword,
+    verifyPassword,
+    requireAuth,
+    cloudStorage,
+});
 
 // For React Router: Catch all non-API routes and serve the index.html
 app.use((req, res, next) => {
