@@ -2000,6 +2000,9 @@ function App() {
                   <span>•</span>
                   <a href="#" onClick={(e) => { e.preventDefault(); navigate('/privacy'); }}>Privacy</a>
                 </div>
+                <div className="mychess-legal" style={{ marginTop: 10 }}>
+                  <InstallAppButton />
+                </div>
               </section>
             </main>
           </div>
