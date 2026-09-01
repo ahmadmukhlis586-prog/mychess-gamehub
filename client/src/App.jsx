@@ -1512,11 +1512,6 @@ function App() {
 
                   <button type="button" className="mychess-home-logout" onClick={handleLogout}>Logout</button>
                   <button type="button" className="mychess-home-settings" onClick={() => navigate('/settings')}>Settings</button>
-                  <div className="mychess-legal mychess-legal-home">
-                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('/terms'); }}>Terms</a>
-                    <span>•</span>
-                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('/privacy'); }}>Privacy</a>
-                  </div>
                 </div>
               </div>
             </header>
@@ -1816,6 +1811,13 @@ function App() {
                 <MusicCarousel token={localStorage.getItem(TOKEN_KEY)} />
               </div>
               </ScrollReveal>
+
+              {/* Terms / Privacy footer — right below music albums */}
+              <footer className="mychess-legal mychess-legal-footer">
+                <a href="#" onClick={(e) => { e.preventDefault(); navigate('/terms'); }}>Terms</a>
+                <span>•</span>
+                <a href="#" onClick={(e) => { e.preventDefault(); navigate('/privacy'); }}>Privacy</a>
+              </footer>
             </main>
 
             {/* LOBBY MODAL */}

@@ -3407,5 +3407,11 @@ a, a:hover, a:focus, a:active, button, .btn {
   transition: color 0.2s;
 }
 .mychess-legal a:hover { color: #a78bfa; }
-.mychess-legal-home { margin-top: 0; gap: 8px; }
-.mychess-legal-home a { font-size: 12px; white-space: nowrap; }
+.mychess-legal-footer {
+  margin-top: 0;
+  margin-bottom: 48px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 10px;
+}
+.mychess-legal-footer a { font-size: 12px; white-space: nowrap; }
