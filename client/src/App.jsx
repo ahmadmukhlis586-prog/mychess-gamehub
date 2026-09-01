@@ -52,6 +52,7 @@ import AnnouncementsSection from './components/AnnouncementsSection';
 import FriendsPanel from './components/FriendsPanel';
 import Avatar from './components/Avatar';
 import UsernameLink from './components/UsernameLink';
+import InstallAppButton from './components/InstallAppButton';
 import { playCheckSound, playPurchaseSound } from './helpers';
 
 // ✅ IMPORT FROM CONFIG (SINGLE SOURCE OF TRUTH)
@@ -1513,6 +1514,7 @@ function App() {
 
                   <button type="button" className="mychess-home-logout" onClick={handleLogout}>Logout</button>
                   <button type="button" className="mychess-home-settings" onClick={() => navigate('/settings')}>Settings</button>
+                  <InstallAppButton />
                 </div>
               </div>
             </header>

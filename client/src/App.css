@@ -3425,3 +3425,19 @@ a, a:hover, a:focus, a:active, button, .btn {
   transition: color 0.2s, border-color 0.2s;
 }
 .username-link:hover { color: #a78bfa; border-bottom-color: #a78bfa; }
+
+/* ============ INSTALL APP BUTTON (PWA) ============ */
+.mychess-install-btn {
+  background: rgba(124, 58, 237, 0.16);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  white-space: nowrap;
+}
+.mychess-install-btn:hover { background: rgba(124, 58, 237, 0.3); transform: translateY(-1px); }
+.mychess-install-btn:active { transform: translateY(0) scale(0.97); }
