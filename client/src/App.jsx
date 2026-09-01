@@ -27,6 +27,8 @@ import PlayerProfile from './pages/PlayerProfile';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 import CinematicHero from './components/CinematicHero';
 import NotificationToast from './components/NotificationToast';
 import MusicCarousel from './components/MusicCarousel';
@@ -1510,6 +1512,11 @@ function App() {
 
                   <button type="button" className="mychess-home-logout" onClick={handleLogout}>Logout</button>
                   <button type="button" className="mychess-home-settings" onClick={() => navigate('/settings')}>Settings</button>
+                  <div className="mychess-legal mychess-legal-home">
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('/terms'); }}>Terms</a>
+                    <span>•</span>
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate('/privacy'); }}>Privacy</a>
+                  </div>
                 </div>
               </div>
             </header>
@@ -1983,6 +1990,11 @@ function App() {
                     {loading ? (<><span className="mychess-spinner" />Processing...</>) : (<>{isRegister ? 'Create MYCHESS Account' : 'Enter MYCHESS'}<span>→</span></>)}
                   </button>
                 </form>
+                <div className="mychess-legal">
+                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/terms'); }}>Terms</a>
+                  <span>•</span>
+                  <a href="#" onClick={(e) => { e.preventDefault(); navigate('/privacy'); }}>Privacy</a>
+                </div>
               </section>
             </main>
           </div>
@@ -2057,6 +2069,10 @@ function App() {
       <Route path="/settings" element={
         <AccountSettingsPage token={localStorage.getItem(TOKEN_KEY)} account={account} />
       } />
+
+      {/* Legal pages (public) */}
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
 
     </Routes>
   );
