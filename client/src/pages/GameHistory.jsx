@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE } from '../config'; // ✅ ADD THIS IMPORT
+import UsernameLink from '../components/UsernameLink';
 
 const GameHistory = ({ token, onBack }) => {
     const [games, setGames] = useState([]);
@@ -124,7 +125,7 @@ const GameHistory = ({ token, onBack }) => {
 
                             <div className="game-history-body">
                                 <div className="game-opponent">
-                                    <strong>Opponent:</strong> {game.opponent}
+                                    <strong>Opponent:</strong> <UsernameLink name={game.opponent} />
                                 </div>
                                 <div className="game-score">
                                     <strong>Your Score:</strong> {game.playerScore} - {game.opponentScore}

@@ -3415,3 +3415,13 @@ a, a:hover, a:focus, a:active, button, .btn {
   gap: 10px;
 }
 .mychess-legal-footer a { font-size: 12px; white-space: nowrap; }
+
+/* ============ CLICKABLE USERNAME LINKS ============ */
+.username-link {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.35);
+  transition: color 0.2s, border-color 0.2s;
+}
+.username-link:hover { color: #a78bfa; border-bottom-color: #a78bfa; }

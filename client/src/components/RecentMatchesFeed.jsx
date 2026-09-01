@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE, TOKEN_KEY } from '../config';
+import UsernameLink from './UsernameLink';
 
 function timeAgo(dateStr) {
   if (!dateStr) return '';
@@ -73,9 +74,9 @@ export default function RecentMatchesFeed() {
             <div key={m.id || i} className="rmf-card" style={{ animationDelay: `${i * 0.06}s` }}>
               <div className="rmf-card-top">
                 <div className="rmf-players">
-                  <span className="rmf-player-name">{m.white_username || 'White'}</span>
+                  <span className="rmf-player-name"><UsernameLink name={m.white_username || 'White'} /></span>
                   <span className="rmf-vs">vs</span>
-                  <span className="rmf-player-name">{m.black_username || 'Black'}</span>
+                  <span className="rmf-player-name"><UsernameLink name={m.black_username || 'Black'} /></span>
                 </div>
                 <div className="rmf-time">{timeAgo(m.finished_at)}</div>
               </div>

@@ -51,6 +51,7 @@ import VictoryParticles from './components/VictoryParticles';
 import AnnouncementsSection from './components/AnnouncementsSection';
 import FriendsPanel from './components/FriendsPanel';
 import Avatar from './components/Avatar';
+import UsernameLink from './components/UsernameLink';
 import { playCheckSound, playPurchaseSound } from './helpers';
 
 // ✅ IMPORT FROM CONFIG (SINGLE SOURCE OF TRUTH)
@@ -1723,7 +1724,7 @@ function App() {
                           <div key={player.id} className="leaderboard-card">
                             <span className="leaderboard-rank">{index + 1}</span>
                             <div className="leaderboard-avatar">{player.username?.charAt(0).toUpperCase() || '?'}</div>
-                            <div className="leaderboard-name">{player.username}</div>
+                            <div className="leaderboard-name"><UsernameLink name={player.username} /></div>
                             <span className="leaderboard-elo">{Number(player.elo || 0)} ELO</span>
                           </div>
                         ))
@@ -2049,6 +2050,7 @@ function App() {
 
       {/* Player Profile Page */}
       <Route path="/profile/:userId" element={<PlayerProfile onBack={() => navigate('/')} />} />
+      <Route path="/profile/u/:username" element={<PlayerProfile onBack={() => navigate('/')} />} />
 
       {/* Tournament Page */}
       <Route path="/tournaments" element={<TournamentPage token={localStorage.getItem(TOKEN_KEY)} account={account} onBack={() => navigate('/')} onJoinRoom={connectToMatch} onAccountUpdate={async () => {

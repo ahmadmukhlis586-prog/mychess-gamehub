@@ -2169,6 +2169,22 @@ app.get('/api/profile/:userId', requireAuth, async (req, res) => {
     }
 });
 
+// ADDITIVE: resolve a public profile by username (used by clickable username links)
+app.get('/api/profile/by-username/:username', requireAuth, async (req, res) => {
+    try {
+        const account = await db.findAccountByUsername(req.params.username);
+        if (!account) return res.status(404).json({ ok: false, message: 'Player not found' });
+        const profile = await db.getPublicProfile(account.id);
+        const matches = await db.getMatchTimeline(account.id, 10);
+        const achievements = await db.getUserAchievements(account.id);
+        const unlockedCount = achievements.filter(a => a.unlocked_at).length;
+        res.json({ ok: true, id: account.id, profile, recentMatches: matches, totalAchievements: achievements.length, unlockedAchievements: unlockedCount });
+    } catch (error) {
+        console.error('Profile-by-username error:', error);
+        res.status(500).json({ ok: false, message: 'Unable to load profile' });
+    }
+});
+
 // ============================================
 // NOTIFICATIONS ENDPOINT
 // ============================================

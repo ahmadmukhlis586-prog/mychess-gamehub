@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { API_BASE, TOKEN_KEY } from '../config';
 import FloatingBackground from '../components/FloatingBackground';
+import UsernameLink from '../components/UsernameLink';
 
 const PlayerProfile = ({ onBack }) => {
-  const { userId } = useParams();
+  const { userId, username } = useParams();
   const [profile, setProfile] = useState(null);
   const [recentMatches, setRecentMatches] = useState([]);
   const [totalAch, setTotalAch] = useState(0);
@@ -32,6 +33,32 @@ const PlayerProfile = ({ onBack }) => {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [userId]);
+
+  // ADDITIVE: profile-by-username route (/profile/u/:username). Resolves the
+  // username to a profile (and its avatar) without altering the userId path above.
+  useEffect(() => {
+    if (!username || userId) return;
+    const token = localStorage.getItem(TOKEN_KEY);
+    const u = encodeURIComponent(decodeURIComponent(username));
+    fetch(`${API_BASE}/profile/by-username/${u}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          setProfile(d.profile);
+          setRecentMatches(d.recentMatches);
+          setTotalAch(d.totalAchievements);
+          setUnlockedAch(d.unlockedAchievements);
+          if (d.id) {
+            fetch(`${API_BASE}/avatar/${d.id}`, { headers: { Authorization: `Bearer ${token}` } })
+              .then(r => r.json())
+              .then(a => { if (a.ok && a.avatar) setAvatar(a.avatar); })
+              .catch(() => {});
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [username, userId]);
 
   if (loading) return <div className="pp-page"><FloatingBackground /><div className="pp-loading">Loading profile...</div></div>;
   if (!profile) return <div className="pp-page"><FloatingBackground /><div className="pp-loading">Player not found</div></div>;
@@ -79,7 +106,7 @@ const PlayerProfile = ({ onBack }) => {
                 <div key={i} className={`pp-match ${draw ? 'pp-draw' : won ? 'pp-win' : 'pp-loss'}`}>
                   <span className="pp-match-result">{draw ? 'DRAW' : won ? 'WIN' : 'LOSS'}</span>
                   <span className="pp-match-vs">vs</span>
-                  <span className="pp-match-opponent">{opponent}</span>
+                  <span className="pp-match-opponent"><UsernameLink name={opponent} /></span>
                 </div>
               );
             })}
