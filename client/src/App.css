@@ -2529,14 +2529,18 @@ a, a:hover, a:focus, a:active, button, .btn {
 .pth-preview-panel {
   margin-top: 14px;
   padding: 14px;
+  min-height: 210px;
+  box-sizing: border-box;
   background: rgba(12,8,24,0.7);
   border: 1px solid rgba(168,85,247,0.2);
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 16px;
+  transition: border-color 0.2s;
 }
-.pth-preview-panel.pth-preview-empty { display: none; }
+.pth-preview-panel.pth-preview-empty { visibility: hidden; }
+.pth-preview-placeholder { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.06em; }
 .pth-preview-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); margin-bottom: 6px; letter-spacing: 0.08em; }
 .pth-mini-board { display: grid; grid-template-columns: repeat(8, 1fr); width: 176px; height: 176px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
 .pth-mini-sq { display: flex; align-items: center; justify-content: center; }

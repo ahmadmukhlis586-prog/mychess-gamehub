@@ -208,12 +208,18 @@ const ProfileThemes = ({ token, onEloUpdate }) => {
   };
 
   const renderPreviewPanel = () => {
-    if (!preview) return null;
+    // FIX (permanent): the panel is ALWAYS rendered with a reserved fixed
+    // height. When idle it is hidden via CSS `visibility` (space retained),
+    // so hovering a theme card never resizes the grid -> no layout shift
+    // -> no flicker / mouseleave-mouseenter flicker loop.
+    const empty = !preview;
     return (
-      <div className="pth-preview-panel">
+      <div className={`pth-preview-panel${empty ? ' pth-preview-empty' : ''}`}>
         <div>
           <div className="pth-preview-label">IN-MATCH PREVIEW</div>
-          {previewKind === 'board' ? (
+          {empty ? (
+            <div className="pth-preview-placeholder">Hover a theme to preview it here</div>
+          ) : previewKind === 'board' ? (
             renderMiniBoard(preview.light_sq || '#f0d9b5', preview.dark_sq || '#b58863')
           ) : (
             <div
