@@ -28,6 +28,13 @@ const InventoryPage = ({ token, onClose, account }) => {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState(null);
 
+    // ADDED: only themes the user actually owns show in Inventory —
+    // i.e. genuinely-free base themes (cost_elo 0) OR the currently
+    // equipped theme. Unowned paid themes are not shown here; the
+    // Themes Shop is the only place to buy them.
+    const ownedProfileThemes = profileThemes.filter(t => t.cost_elo === 0 || t.id === profileEquipped);
+    const ownedBoardThemes = boardThemes.filter(t => t.cost_elo === 0 || t.id === boardEquipped);
+
     // State for live preview
     const [previewColor, setPreviewColor] = useState('#ffffff');
 
@@ -395,10 +402,10 @@ const InventoryPage = ({ token, onClose, account }) => {
                     <div className="shop-items">
                         {loading ? (
                             <div className="loading-spinner">Loading...</div>
-                        ) : profileThemes.length === 0 ? (
-                            <div className="empty-shop">No profile themes available.</div>
+                        ) : ownedProfileThemes.length === 0 ? (
+                            <div className="empty-shop">You don't own any profile themes yet. Visit the Themes Shop to unlock!</div>
                         ) : (
-                            profileThemes.filter(theme => theme.cost_elo === 0 || theme.id === profileEquipped).map(theme => {
+                            ownedProfileThemes.map(theme => {
                                 const equipped = profileEquipped === theme.id;
                                 return (
                                     <div key={theme.id}
@@ -437,10 +444,10 @@ const InventoryPage = ({ token, onClose, account }) => {
                     <div className="shop-items">
                         {loading ? (
                             <div className="loading-spinner">Loading...</div>
-                        ) : boardThemes.length === 0 ? (
-                            <div className="empty-shop">No board themes available.</div>
+                        ) : ownedBoardThemes.length === 0 ? (
+                            <div className="empty-shop">You don't own any board themes yet. Visit the Themes Shop to unlock!</div>
                         ) : (
-                            boardThemes.filter(theme => theme.cost_elo === 0 || theme.id === boardEquipped).map(theme => {
+                            ownedBoardThemes.map(theme => {
                                 const equipped = boardEquipped === theme.id;
                                 return (
                                     <div key={theme.id}
