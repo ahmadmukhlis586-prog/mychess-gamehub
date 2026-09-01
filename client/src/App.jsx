@@ -332,6 +332,8 @@ function App() {
   const [showInventory, setShowInventory] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [equippedItems, setEquippedItems] = useState([]);
+  // ADDED: equipped profile + animated board themes (separate "Themes" tab system)
+  const [themes, setThemes] = useState({ profileTheme: null, boardTheme: null });
   const [activeLobbies, setActiveLobbies] = useState([]);
   const [topPlayers, setTopPlayers] = useState([]);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -428,6 +430,17 @@ function App() {
       .catch(() => {});
   }, [account]);
 
+  // ---- FETCH EQUIPPED THEMES ON LOGIN (ADDED) ----
+  useEffect(() => {
+    if (!account) return;
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return;
+    fetch(`${API_BASE}/themes/equipped`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => { if (data.ok) setThemes({ profileTheme: data.profileTheme, boardTheme: data.boardTheme }); })
+      .catch(() => {});
+  }, [account]);
+
   // ---- PRESENCE SOCKET (friends & challenges) ----
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -502,6 +515,12 @@ function App() {
       .then(data => {
         if (data.ok) setEquippedItems(data.equipped);
       })
+      .catch(() => {});
+    // ADDED: refresh equipped themes when a match starts so the animated board
+    // theme is current (parallel to the equippedItems refresh above).
+    fetch(`${API_BASE}/themes/equipped`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => { if (data.ok) setThemes({ profileTheme: data.profileTheme, boardTheme: data.boardTheme }); })
       .catch(() => {});
 
     setScreen('match');
@@ -1134,6 +1153,13 @@ function App() {
     const boardTheme = getEquippedVisual(equippedItems, 'board');
     const lightColor = boardTheme.light || '#e8e3ee';
     const darkColor = boardTheme.dark || '#5b466f';
+    // ADDED: The "Themes" tab animated board theme takes precedence over the Items
+    // board so the two systems never both paint the board. Applies only when a board
+    // theme is equipped, otherwise falls back to the Items board / default colors.
+    const themedLight = themes.boardTheme?.light_sq || null;
+    const themedDark = themes.boardTheme?.dark_sq || null;
+    const boardLight = themedLight || lightColor;
+    const boardDark = themedDark || darkColor;
     const nameColor = getEquippedVisual(equippedItems, 'name_color').color;
     const frameStyle = getEquippedVisual(equippedItems, 'avatar_frame').frame;
     const borderColor = frameStyle === 'gold' ? '#ffd700' : frameStyle === 'crystal' ? '#00ffff' : frameStyle === 'diamond' ? '#ffffff' : frameStyle === 'crown' ? '#ffd700' : 'rgba(255,255,255,.08)';
@@ -1283,7 +1309,7 @@ function App() {
               key={square}
               style={{
                 ...MATCH_STYLES.square,
-                background: isSelected ? 'linear-gradient(135deg,#a36bff,#6b32d7)' : isLastMove ? 'rgba(166,112,255,.42)' : isDark ? darkColor : lightColor,
+                background: isSelected ? 'linear-gradient(135deg,#a36bff,#6b32d7)' : isLastMove ? 'rgba(166,112,255,.42)' : isDark ? boardDark : boardLight,
                 boxShadow: isSelected ? 'inset 0 0 0 2px rgba(255,255,255,.45)' : 'none',
               }}
               onClick={() => handleSquareClick(square, piece)}

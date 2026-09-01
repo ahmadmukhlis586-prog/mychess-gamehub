@@ -12,6 +12,7 @@ const PlayerProfile = ({ onBack }) => {
   const [unlockedAch, setUnlockedAch] = useState(0);
   const [avatar, setAvatar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -24,6 +25,7 @@ const PlayerProfile = ({ onBack }) => {
           setRecentMatches(d.recentMatches);
           setTotalAch(d.totalAchievements);
           setUnlockedAch(d.unlockedAchievements);
+          setTheme(d.theme || null);
         }
       })
       .catch(() => {});
@@ -48,6 +50,7 @@ const PlayerProfile = ({ onBack }) => {
           setRecentMatches(d.recentMatches);
           setTotalAch(d.totalAchievements);
           setUnlockedAch(d.unlockedAchievements);
+          setTheme(d.theme || null);
           if (d.id) {
             fetch(`${API_BASE}/avatar/${d.id}`, { headers: { Authorization: `Bearer ${token}` } })
               .then(r => r.json())
@@ -74,7 +77,7 @@ const PlayerProfile = ({ onBack }) => {
       </header>
 
       <main className="pp-main">
-        <div className="pp-card">
+        <div className="pp-card" style={theme && theme.gradient ? { background: theme.gradient } : undefined}>
           <div className="pp-avatar">{avatar ? <img src={avatar} alt={profile.username} className="pp-avatar-img" /> : profile.username?.charAt(0).toUpperCase()}</div>
           <h1 className="pp-name">{profile.username}</h1>
           <div className="pp-since">Member since {memberSince}</div>

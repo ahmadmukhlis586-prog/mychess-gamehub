@@ -27,6 +27,8 @@ const ChessAIPage = ({ token, onBack }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [gameResult, setGameResult] = useState(null);
   const [equippedItems, setEquippedItems] = useState({});
+  // ADDED: separate state for the "Themes" tab animated board theme (precedence)
+  const [themedBoardTheme, setThemedBoardTheme] = useState(null);
 
   const { material, chronological: capturedChronological } = useMemo(() => {
     if (!moveHistory || moveHistory.length === 0) return { captured: { w: [], b: [] }, material: { w: 0, b: 0 }, chronological: [] };
@@ -70,7 +72,22 @@ const ChessAIPage = ({ token, onBack }) => {
       .catch(() => {});
   }, [token]);
 
+  // ADDED: Apply the "Themes" tab animated board theme in the AI arena too. When a
+  // board theme is equipped it takes precedence (overrides the shop Items board),
+  // exactly like the real match. Kept in its own state to avoid a fetch race.
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE}/themes/equipped`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => { if (data.ok && data.boardTheme) setThemedBoardTheme(data.boardTheme); })
+      .catch(() => {});
+  }, [token]);
+
   const boardTheme = equippedItems.board?.preview_data || {};
+  const shopBoardLight = boardTheme.lightColor;
+  const shopBoardDark = boardTheme.darkColor;
+  const boardLightColor = themedBoardTheme?.light_sq || shopBoardLight || undefined;
+  const boardDarkColor = themedBoardTheme?.dark_sq || shopBoardDark || undefined;
   const pieceSkin = equippedItems.piece?.preview_data || {};
   const effectData = equippedItems.effect?.preview_data || {};
 
@@ -351,8 +368,8 @@ const ChessAIPage = ({ token, onBack }) => {
                           className={`chess-ai-square ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isLegalMove ? 'legal-move' : ''} ${isHint ? 'hint-square' : ''} ${isLastMove ? 'last-move' : ''} ${damageExplosionSquare === square ? 'damage-explosion' : ''} ${moveTrailSquare === square ? 'move-trail' : ''}`}
                           style={{
                             background: isDark
-                              ? (boardTheme.darkColor || undefined)
-                              : (boardTheme.lightColor || undefined),
+                              ? (boardDarkColor || undefined)
+                              : (boardLightColor || undefined),
                           }}
                           onClick={() => handleSquareClick(rowIndex, colIndex)}
                         >

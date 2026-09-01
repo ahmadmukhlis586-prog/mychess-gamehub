@@ -31,6 +31,68 @@ const InventoryPage = ({ token, onClose, account }) => {
     // State for live preview
     const [previewColor, setPreviewColor] = useState('#ffffff');
 
+    // ADDED: hover preview for profile/board theme tabs (customize menu)
+    const [themePreview, setThemePreview] = useState(null);
+    const [themePreviewKind, setThemePreviewKind] = useState('board');
+
+    const showBoardThemePreview = (theme) => { setThemePreview(theme); setThemePreviewKind('board'); };
+    const showProfileThemePreview = (theme) => { setThemePreview(theme); setThemePreviewKind('profile'); };
+
+    const themeMiniBoard = (light, dark) => {
+        const setup = [['r','n','b','q','k','b','n','r'], ['p','p','p','p','p','p','p','p']];
+        const cells = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const isDark = (r + c) % 2 === 1;
+                const letter = (r < 2) ? setup[r][c] : ((r > 5) ? setup[r - 6][c] : null);
+                cells.push(
+                    <div key={`${r}-${c}`} className="pth-mini-sq" style={{ background: isDark ? dark : light }}>
+                        {letter && (
+                            <span className="pth-mini-piece">
+                                <ChessPiece color={r < 2 ? 'w' : 'b'} type={letter} />
+                            </span>
+                        )}
+                    </div>
+                );
+            }
+        }
+        return <div className="pth-mini-board">{cells}</div>;
+    };
+
+    const themePreviewPanel = () => {
+        if (!themePreview) return null;
+        return (
+            <div className="pth-preview-panel">
+                <div>
+                    <div className="pth-preview-label">MATCH / PROFILE PREVIEW</div>
+                    {themePreviewKind === 'board'
+                        ? themeMiniBoard(themePreview.light_sq || '#f0d9b5', themePreview.dark_sq || '#b58863')
+                        : (
+                            <div
+                                className="pth-mini-profile"
+                                style={{ background: themePreview.gradient || 'linear-gradient(135deg,#1a1a2e,#16213e)' }}
+                            >
+                                <div className="pth-mini-profile-body">
+                                    <div className="pth-mini-avatar">P</div>
+                                    <div className="pth-mini-pname">Player</div>
+                                    <div className="pth-mini-pmeta">Member since 2026</div>
+                                    <div className="pth-mini-elo">
+                                        <div className="pth-mini-elo-num">1200</div>
+                                        <div className="pth-mini-elo-lbl">ELO RATING</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                </div>
+                <div className="pth-preview-note">
+                    {themePreviewKind === 'board'
+                        ? 'How this board looks in-match. Equip to use it immediately.'
+                        : 'How this background looks on your public profile. Equip to apply it.'}
+                </div>
+            </div>
+        );
+    };
+
     useEffect(() => {
         fetchAllInventory();
     }, []);
@@ -339,7 +401,10 @@ const InventoryPage = ({ token, onClose, account }) => {
                             profileThemes.map(theme => {
                                 const equipped = profileEquipped === theme.id;
                                 return (
-                                    <div key={theme.id} className={`shop-item ${equipped ? 'owned' : ''}`}>
+                                    <div key={theme.id}
+                                        className={`shop-item ${equipped ? 'owned' : ''}`}
+                                        onMouseEnter={() => showProfileThemePreview(theme)}
+                                        onMouseLeave={() => setThemePreview(null)}>
                                         <div className="item-icon">
                                             <div style={{ width: 60, height: 40, borderRadius: 8, background: theme.gradient || 'linear-gradient(135deg,#1a1a2e,#16213e)' }} />
                                         </div>
@@ -363,6 +428,7 @@ const InventoryPage = ({ token, onClose, account }) => {
                                 );
                             })
                         )}
+                        {themePreviewPanel()}
                     </div>
                 )}
 
@@ -377,7 +443,10 @@ const InventoryPage = ({ token, onClose, account }) => {
                             boardThemes.map(theme => {
                                 const equipped = boardEquipped === theme.id;
                                 return (
-                                    <div key={theme.id} className={`shop-item ${equipped ? 'owned' : ''}`}>
+                                    <div key={theme.id}
+                                        className={`shop-item ${equipped ? 'owned' : ''}`}
+                                        onMouseEnter={() => showBoardThemePreview(theme)}
+                                        onMouseLeave={() => setThemePreview(null)}>
                                         <div className="item-icon">
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', width: 44, height: 44, borderRadius: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
                                                 <div style={{ backgroundColor: theme.light_sq || '#f0d9b5' }} />
@@ -406,6 +475,7 @@ const InventoryPage = ({ token, onClose, account }) => {
                                 );
                             })
                         )}
+                        {themePreviewPanel()}
                     </div>
                 )}
             </div>

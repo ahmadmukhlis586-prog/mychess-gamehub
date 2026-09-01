@@ -1117,6 +1117,28 @@ app.post('/api/board-themes/equip', requireAuth, async (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
+| GET EQUIPPED PROFILE + BOARD THEMES (ADDITIVE)
+| Resolves the account's currently equipped animated board theme and public
+| profile theme. Separate from /shop/equipped (the shop_items "Items" board
+| system) so both can coexist without overwriting each other.
+|--------------------------------------------------------------------------
+*/
+
+app.get('/api/themes/equipped', requireAuth, async (req, res) => {
+    try {
+        const [profileTheme, boardTheme] = await Promise.all([
+            db.getEquippedProfileTheme(req.account.id),
+            db.getEquippedBoardTheme(req.account.id),
+        ]);
+        res.json({ ok: true, profileTheme, boardTheme });
+    } catch (error) {
+        console.error('Get equipped themes error:', error);
+        res.status(500).json({ ok: false, message: 'Unable to load equipped themes' });
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
 | START SERVER
 |--------------------------------------------------------------------------
 */
@@ -2162,7 +2184,8 @@ app.get('/api/profile/:userId', requireAuth, async (req, res) => {
         const matches = await db.getMatchTimeline(req.params.userId, 10);
         const achievements = await db.getUserAchievements(req.params.userId);
         const unlockedCount = achievements.filter(a => a.unlocked_at).length;
-        res.json({ ok: true, profile, recentMatches: matches, totalAchievements: achievements.length, unlockedAchievements: unlockedCount });
+        const theme = await db.getEquippedProfileTheme(req.params.userId);
+        res.json({ ok: true, profile, recentMatches: matches, totalAchievements: achievements.length, unlockedAchievements: unlockedCount, theme });
     } catch (error) {
         console.error('Profile error:', error);
         res.status(500).json({ ok: false, message: 'Unable to load profile' });
@@ -2178,7 +2201,8 @@ app.get('/api/profile/by-username/:username', requireAuth, async (req, res) => {
         const matches = await db.getMatchTimeline(account.id, 10);
         const achievements = await db.getUserAchievements(account.id);
         const unlockedCount = achievements.filter(a => a.unlocked_at).length;
-        res.json({ ok: true, id: account.id, profile, recentMatches: matches, totalAchievements: achievements.length, unlockedAchievements: unlockedCount });
+        const theme = await db.getEquippedProfileTheme(account.id);
+        res.json({ ok: true, id: account.id, profile, recentMatches: matches, totalAchievements: achievements.length, unlockedAchievements: unlockedCount, theme });
     } catch (error) {
         console.error('Profile-by-username error:', error);
         res.status(500).json({ ok: false, message: 'Unable to load profile' });

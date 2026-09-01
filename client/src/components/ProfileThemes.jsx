@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE, TOKEN_KEY } from '../config';
+import ChessPiece from './ChessPiece';
 
 const ProfileThemes = ({ token, onEloUpdate }) => {
   const [activeTab, setActiveTab] = useState('profile');
+
+  // ADDED: hover preview state (profile/board theme look in-match)
+  const [preview, setPreview] = useState(null);
+  const [previewKind, setPreviewKind] = useState('board');
 
   const [profileThemes, setProfileThemes] = useState([]);
   const [profileEquipped, setProfileEquipped] = useState(null);
@@ -172,6 +177,70 @@ const ProfileThemes = ({ token, onEloUpdate }) => {
     setTimeout(() => setFeedback(null), 3000);
   };
 
+  // ADDED: Theme hover preview — shows an in-match mini board (for board themes)
+  // or an on-profile mini card (for profile themes) when hovering a theme card.
+  const showBoardPreview = (theme) => { setPreview(theme); setPreviewKind('board'); };
+  const showProfilePreview = (theme) => { setPreview(theme); setPreviewKind('profile'); };
+
+  const renderMiniBoard = (light, dark) => {
+    const letters = [
+      ['r','n','b','q','k','b','n','r'],
+      ['p','p','p','p','p','p','p','p'],
+    ];
+    const cells = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const isDark = (r + c) % 2 === 1;
+        const letter = (r < 2) ? letters[r]?.[c] : ((r > 5) ? letters[r-6]?.[c] : null);
+        const isWhitePiece = r < 2;
+        cells.push(
+          <div key={`${r}-${c}`} className="pth-mini-sq" style={{ background: isDark ? dark : light }}>
+            {letter && (
+              <span className="pth-mini-piece" style={{ color: isWhitePiece ? '#000' : '#fff', opacity: 0.95 }}>
+                <ChessPiece color={isWhitePiece ? 'w' : 'b'} type={letter} />
+              </span>
+            )}
+          </div>
+        );
+      }
+    }
+    return <div className="pth-mini-board">{cells}</div>;
+  };
+
+  const renderPreviewPanel = () => {
+    if (!preview) return null;
+    return (
+      <div className="pth-preview-panel">
+        <div>
+          <div className="pth-preview-label">IN-MATCH PREVIEW</div>
+          {previewKind === 'board' ? (
+            renderMiniBoard(preview.light_sq || '#f0d9b5', preview.dark_sq || '#b58863')
+          ) : (
+            <div
+              className="pth-mini-profile"
+              style={{ background: preview.gradient || 'linear-gradient(135deg,#1a1a2e,#16213e)' }}
+            >
+              <div className="pth-mini-profile-body">
+                <div className="pth-mini-avatar">P</div>
+                <div className="pth-mini-pname">Player</div>
+                <div className="pth-mini-pmeta">Member since 2026</div>
+                <div className="pth-mini-elo">
+                  <div className="pth-mini-elo-num">1200</div>
+                  <div className="pth-mini-elo-lbl">ELO RATING</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="pth-preview-note">
+          {previewKind === 'board'
+            ? <>Hover to preview how this board looks in-match. Equip to use it immediately.</>
+            : <>Hover to preview how this background looks on your public profile. Equip to apply it.</>}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="pth-container">
       <div className="pth-tabs">
@@ -207,7 +276,8 @@ const ProfileThemes = ({ token, onEloUpdate }) => {
                 const owned = profileOwned.includes(theme.id);
                 const equipped = profileEquipped === theme.id;
                 return (
-                  <div key={theme.id} className={`pth-card ${equipped ? 'pth-card-equipped' : ''}`}>
+                  <div key={theme.id} className={`pth-card ${equipped ? 'pth-card-equipped' : ''}`}
+                       onMouseEnter={() => showProfilePreview(theme)} onMouseLeave={() => setPreview(null)}>
                     <div
                       className="pth-card-preview"
                       style={{ background: theme.gradient || 'linear-gradient(135deg, #1a1a2e, #16213e)' }}
@@ -237,11 +307,12 @@ const ProfileThemes = ({ token, onEloUpdate }) => {
                         </button>
                       ) : null}
                     </div>
-                  </div>
-                );
-              })}
+                    </div>
+                  );
+                })}
             </div>
           )}
+          {renderPreviewPanel()}
         </div>
       )}
 
@@ -255,7 +326,8 @@ const ProfileThemes = ({ token, onEloUpdate }) => {
                 const owned = boardOwned.includes(theme.id);
                 const equipped = boardEquipped === theme.id;
                 return (
-                  <div key={theme.id} className={`pth-card ${equipped ? 'pth-card-equipped' : ''}`}>
+                  <div key={theme.id} className={`pth-card ${equipped ? 'pth-card-equipped' : ''}`}
+                       onMouseEnter={() => showBoardPreview(theme)} onMouseLeave={() => setPreview(null)}>
                     <div className="pth-board-preview">
                       <div className="pth-board-preview-row">
                         <div className="pth-board-sq" style={{ backgroundColor: theme.light_sq || '#f0d9b5' }} />
@@ -292,10 +364,11 @@ const ProfileThemes = ({ token, onEloUpdate }) => {
                       ) : null}
                     </div>
                   </div>
-                );
-              })}
+                  );
+                })}
             </div>
           )}
+          {renderPreviewPanel()}
         </div>
       )}
     </div>

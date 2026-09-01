@@ -727,6 +727,43 @@ async function getMatchTimeline(accountId, limit = 20) {
 }
 
 // ============================================
+// THEME HELPERS (ADDITIVE)
+// Returns the theme the account currently has equipped for their public profile
+// and for the animated board, since Profiles/Themes tab system is separate from
+// the shop_items based "Items" board system.
+// ============================================
+
+async function getEquippedProfileTheme(accountId) {
+    try {
+        const result = await pool.query(
+            `SELECT pt.* FROM profile_themes pt
+             JOIN user_profile_theme up ON up.theme_id = pt.id
+             WHERE up.account_id = $1`,
+            [accountId]
+        );
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('getEquippedProfileTheme error:', error);
+        return null;
+    }
+}
+
+async function getEquippedBoardTheme(accountId) {
+    try {
+        const result = await pool.query(
+            `SELECT bt.* FROM animated_board_themes bt
+             JOIN user_board_theme ub ON ub.board_theme_id = bt.id
+             WHERE ub.account_id = $1`,
+            [accountId]
+        );
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('getEquippedBoardTheme error:', error);
+        return null;
+    }
+}
+
+// ============================================
 // DAILY PUZZLE HELPERS
 // ============================================
 
@@ -938,6 +975,10 @@ module.exports = {
     // Profile helpers
     getPublicProfile,
     getMatchTimeline,
+
+    // Theme helpers (additive)
+    getEquippedProfileTheme,
+    getEquippedBoardTheme,
 
     // Daily Puzzle helpers
     getTodayPuzzle,
