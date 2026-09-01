@@ -1138,6 +1138,14 @@ function App() {
     const frameStyle = getEquippedVisual(equippedItems, 'avatar_frame').frame;
     const borderColor = frameStyle === 'gold' ? '#ffd700' : frameStyle === 'crystal' ? '#00ffff' : frameStyle === 'diamond' ? '#ffffff' : frameStyle === 'crown' ? '#ffd700' : 'rgba(255,255,255,.08)';
 
+    // ADDED: Per-player cosmetics — the user's own equipped name color and avatar
+    // frame apply ONLY to their own name/avatar; the opponent always renders default
+    // so there is no color/effect confusion between players in-match. Additive only.
+    const myNameColor = nameColor || '#fff';
+    const oppNameColor = '#fff';
+    const myBorderColor = borderColor;
+    const oppBorderColor = 'rgba(255,255,255,.08)';
+
     const findKingSquare = (fen, color) => {
       if (!fen) return null;
       const boardPart = fen.split(' ')[0];
@@ -1233,10 +1241,10 @@ function App() {
               {/* BLACK / TOP PLAYER */}
               <div style={MATCH_STYLES.playerBar}>
                 <div style={MATCH_STYLES.playerInfo}>
-                  <div style={{ ...MATCH_STYLES.avatar, border: `2px solid ${borderColor}` }}>{blackName.charAt(0).toUpperCase()}</div>
+                  <div style={{ ...MATCH_STYLES.avatar, border: `2px solid ${playerRole === 'b' ? myBorderColor : oppBorderColor}` }}>{blackName.charAt(0).toUpperCase()}</div>
                   <div style={{ minWidth: 0 }}>
                     <div style={MATCH_STYLES.playerName}>
-                      <span style={{ color: nameColor || '#fff' }}>{blackName}</span>
+                      <span style={{ color: playerRole === 'b' ? myNameColor : oppNameColor }}>{blackName}</span>
                       {playerRole === 'b' && <span style={{ marginLeft: 7, color: '#a97bff', fontSize: 10 }}>YOU</span>}
                     </div>
                     <div style={MATCH_STYLES.playerMeta}>BLACK · OPPONENT</div>
@@ -1331,10 +1339,10 @@ function App() {
               {/* WHITE / BOTTOM PLAYER */}
               <div style={{ ...MATCH_STYLES.playerBar, marginTop: 9, marginBottom: 0 }}>
                 <div style={MATCH_STYLES.playerInfo}>
-                  <div style={{ ...MATCH_STYLES.avatar, border: `2px solid ${borderColor}` }}>{(players.white?.name || 'Waiting...').charAt(0).toUpperCase()}</div>
+                  <div style={{ ...MATCH_STYLES.avatar, border: `2px solid ${playerRole === 'w' ? myBorderColor : oppBorderColor}` }}>{(players.white?.name || 'Waiting...').charAt(0).toUpperCase()}</div>
                   <div style={{ minWidth: 0 }}>
                     <div style={MATCH_STYLES.playerName}>
-                      <span style={{ color: nameColor || '#fff' }}>{whiteName}</span>
+                      <span style={{ color: playerRole === 'w' ? myNameColor : oppNameColor }}>{whiteName}</span>
                       {playerRole === 'w' && <span style={{ marginLeft: 7, color: '#a97bff', fontSize: 10 }}>YOU</span>}
                     </div>
                     <div style={MATCH_STYLES.playerMeta}>WHITE · PLAYER</div>

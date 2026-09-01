@@ -45,6 +45,31 @@ const ChessAIPage = ({ token, onBack }) => {
       .catch(() => {});
   }, [token]);
 
+  // ADDED: Normalize /shop/equipped (returns an array) into the keyed object the
+  // page's render already expects, so equipped board / piece / effect cosmetics
+  // apply in the AI Practice Arena. Board uses light/dark keys mapped to the page's
+  // lightColor/darkColor, and effect maps to the page's `name` key. Additive only.
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE}/shop/equipped`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.ok || !Array.isArray(data.equipped)) return;
+        const arr = data.equipped;
+        const findOne = (cat) => arr.find(i => i.category === cat && i.is_equipped);
+        const board = findOne('board');
+        const piece = findOne('piece');
+        const effect = findOne('effect');
+        const pd = board?.preview_data || {};
+        setEquippedItems({
+          board: board ? { preview_data: { ...pd, lightColor: pd.light, darkColor: pd.dark } } : {},
+          piece: piece ? { preview_data: piece.preview_data } : {},
+          effect: effect ? { preview_data: { ...(effect.preview_data || {}), name: effect.preview_data?.effect } } : {},
+        });
+      })
+      .catch(() => {});
+  }, [token]);
+
   const boardTheme = equippedItems.board?.preview_data || {};
   const pieceSkin = equippedItems.piece?.preview_data || {};
   const effectData = equippedItems.effect?.preview_data || {};
