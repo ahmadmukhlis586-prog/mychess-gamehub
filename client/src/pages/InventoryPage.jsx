@@ -398,7 +398,7 @@ const InventoryPage = ({ token, onClose, account }) => {
                         ) : profileThemes.length === 0 ? (
                             <div className="empty-shop">No profile themes available.</div>
                         ) : (
-                            profileThemes.map(theme => {
+                            profileThemes.filter(theme => theme.cost_elo === 0 || theme.id === profileEquipped).map(theme => {
                                 const equipped = profileEquipped === theme.id;
                                 return (
                                     <div key={theme.id}
@@ -440,7 +440,7 @@ const InventoryPage = ({ token, onClose, account }) => {
                         ) : boardThemes.length === 0 ? (
                             <div className="empty-shop">No board themes available.</div>
                         ) : (
-                            boardThemes.map(theme => {
+                            boardThemes.filter(theme => theme.cost_elo === 0 || theme.id === boardEquipped).map(theme => {
                                 const equipped = boardEquipped === theme.id;
                                 return (
                                     <div key={theme.id}
