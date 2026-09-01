@@ -2584,6 +2584,15 @@ a, a:hover, a:focus, a:active, button, .btn {
 @keyframes ejFloat { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-120px) scale(1.3)} }
 .ej-toggle-btn { position: absolute; bottom: 8px; right: 8px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.25); border-radius: 50%; font-size: 14px; cursor: pointer; }
 
+/* ADDED: styles matching the class names used by EmojiReactions.jsx so the
+   in-match reaction widget (toggle, emoji bar, floating animations) renders. */
+.ej-reactions-container { position: relative; display: inline-block; margin-top: 10px; }
+.ej-reactions-toggle { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); border-radius: 50%; font-size: 17px; cursor: pointer; transition: all 0.15s; color: #e6d9ff; }
+.ej-reactions-toggle:hover { background: rgba(168,85,247,0.3); transform: scale(1.1); }
+.ej-reactions-emoji-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.15s; }
+.ej-reactions-emoji-btn:hover { background: rgba(168,85,247,0.15); transform: scale(1.15); }
+.ej-floating-emoji { position: fixed; left: 50%; top: 55%; transform: translateX(-50%); font-size: 40px; pointer-events: none; z-index: 3000; animation: ejFloat 2.2s ease forwards; text-shadow: 0 0 12px rgba(168,85,247,0.6); }
+
 /* ============================================================
    SHOP MAIN TABS
    ============================================================ */

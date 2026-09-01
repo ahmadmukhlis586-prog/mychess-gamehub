@@ -53,6 +53,7 @@ import FriendsPanel from './components/FriendsPanel';
 import Avatar from './components/Avatar';
 import UsernameLink from './components/UsernameLink';
 import InstallAppButton from './components/InstallAppButton';
+import EmojiReactions from './components/EmojiReactions';
 import { playCheckSound, playPurchaseSound } from './helpers';
 
 // ✅ IMPORT FROM CONFIG (SINGLE SOURCE OF TRUTH)
@@ -1172,6 +1173,10 @@ function App() {
     const myBorderColor = borderColor;
     const oppBorderColor = 'rgba(255,255,255,.08)';
 
+    // ADDED: the opponent's account id (for in-match reactions to target). The
+    // user's own id comes from `account`; the opponent is the other player.
+    const opponentId = playerRole === 'w' ? players.black?.id : players.white?.id;
+
     const findKingSquare = (fen, color) => {
       if (!fen) return null;
       const boardPart = fen.split(' ')[0];
@@ -1382,6 +1387,16 @@ function App() {
                   {matchCommentary}
                 </div>
               )}
+
+              {/* ADDED: in-match reactions (owned emojis) — send to opponent + show
+                  floating emoji animations from both players. Mounted additively. */}
+              <EmojiReactions
+                token={localStorage.getItem(TOKEN_KEY)}
+                roomId={localStorage.getItem(ROOM_KEY)}
+                receiverId={opponentId}
+                socket={socketRef.current}
+                account={account}
+              />
             </section>
 
             {/* RIGHT SIDE */}
