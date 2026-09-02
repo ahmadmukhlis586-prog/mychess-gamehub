@@ -6,6 +6,7 @@ import CapturedPieces, { getCapturedPieces } from '../components/CapturedPieces'
 import MusicWidget from '../components/MusicWidget';
 import { playCaptureSound, playVictorySound, playDefeatSound } from '../helpers';
 import { API_BASE } from '../config';
+import MemeSoundboard from '../components/MemeSoundboard';
 
 const ChessAIPage = ({ token, onBack }) => {
   const chessRef = useRef(new Chess());
@@ -348,6 +349,8 @@ const ChessAIPage = ({ token, onBack }) => {
             <span>{turn === 'w' ? 'Your Turn' : 'AI Thinking...'}</span>
             <span>{status}</span>
           </div>
+
+          <MemeSoundboard token={token} socket={null} aiMode />
 
           <div className="chess-ai-layout">
             <div className="chess-ai-board-container">

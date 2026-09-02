@@ -25,10 +25,17 @@ const AdminConfigPage = ({ token, onBack }) => {
   const [editingBoard, setEditingBoard] = useState(null);
   const [themesLoading, setThemesLoading] = useState(false);
 
+  // ADDED: state for the Meme Sounds admin tab
+  const [memeSounds, setMemeSounds] = useState([]);
+  const [memeForm, setMemeForm] = useState({});
+  const [editingMeme, setEditingMeme] = useState(null);
+  const [memeAudioFile, setMemeAudioFile] = useState(null);
+
   useEffect(() => {
     fetchData();
     fetchProfileThemeList();
     fetchBoardThemeList();
+    fetchMemeSoundList();
   }, []);
 
   // Auto-hide success overlay after 3 seconds
@@ -346,6 +353,79 @@ const AdminConfigPage = ({ token, onBack }) => {
     }
   };
 
+  // =========================================================================
+  // ✅ ADDED: admin handlers for MEME SOUNDS tab (additive, dedicated funcs)
+  // =========================================================================
+  const fetchMemeSoundList = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/meme-sounds`, { headers: { Authorization: `Bearer ${token}` } });
+      const result = await res.json();
+      if (result.ok) setMemeSounds(result.sounds || []);
+    } catch (error) {
+      console.error('Error fetching meme sounds:', error);
+    }
+  };
+
+  const handleMemeSoundChange = (e) => {
+    const { name, value } = e.target;
+    setMemeForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditMemeSound = (item) => {
+    setEditingMeme(item);
+    setMemeForm(item);
+    setMemeAudioFile(null);
+  };
+
+  const handleMemeSoundSave = async (e) => {
+    e.preventDefault();
+    const isEditing = !!editingMeme;
+    const url = isEditing
+      ? `${API_BASE}/admin/meme-sounds/update/${editingMeme.id}`
+      : `${API_BASE}/admin/meme-sounds/create`;
+    const method = isEditing ? 'PUT' : 'POST';
+
+    const payload = new FormData();
+    payload.append('name', memeForm.name || '');
+    payload.append('emoji', memeForm.emoji || '🔊');
+    if (memeAudioFile) payload.append('audio_file', memeAudioFile);
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: payload,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to save meme sound: ${err.message || 'Unknown error'}`);
+        return;
+      }
+      setMemeForm({});
+      setEditingMeme(null);
+      setMemeAudioFile(null);
+      setShowSuccess(true);
+      fetchMemeSoundList();
+    } catch (error) {
+      console.error('Meme sound save error:', error);
+      alert('Error saving meme sound. Check if backend is running.');
+    }
+  };
+
+  const handleMemeSoundDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this meme sound?')) return;
+    try {
+      await fetch(`${API_BASE}/admin/meme-sounds/delete/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShowSuccess(true);
+      fetchMemeSoundList();
+    } catch (error) {
+      console.error('Meme sound delete error:', error);
+    }
+  };
+
   return (
     <div className="chess-ai-page">
       {/* ✅ Animated Success Toast */}
@@ -386,6 +466,7 @@ const AdminConfigPage = ({ token, onBack }) => {
           <button className={`admin-tab ${activeTab === 'musicAlbums' ? 'active' : ''}`} onClick={() => { setActiveTab('musicAlbums'); setEditingItem(null); setFormData({}); setAudioFile(null); setCoverFile(null); setAnnouncementImage(null); }}>🎵 Music Albums</button>
           <button className={`admin-tab ${activeTab === 'profileThemes' ? 'active' : ''}`} onClick={() => { setActiveTab('profileThemes'); setEditingItem(null); setFormData({}); setEditingProfile(null); setProfileForm({}); fetchProfileThemeList(); }}>🎨 Profile Themes</button>
           <button className={`admin-tab ${activeTab === 'boardThemes' ? 'active' : ''}`} onClick={() => { setActiveTab('boardThemes'); setEditingItem(null); setFormData({}); setEditingBoard(null); setBoardForm({}); fetchBoardThemeList(); }}>♟️ Board Themes</button>
+          <button className={`admin-tab ${activeTab === 'memeSounds' ? 'active' : ''}`} onClick={() => { setActiveTab('memeSounds'); setEditingItem(null); setFormData({}); setEditingMeme(null); setMemeForm({}); setMemeAudioFile(null); fetchMemeSoundList(); }}>🔊 Meme Sounds</button>
         </div>
 
         {/* ADDED: Profile Themes editor (shown only on its tab) */}
@@ -462,7 +543,7 @@ const AdminConfigPage = ({ token, onBack }) => {
           </div>
         )}
 
-        {activeTab !== 'profileThemes' && activeTab !== 'boardThemes' && (
+        {activeTab !== 'profileThemes' && activeTab !== 'boardThemes' && activeTab !== 'memeSounds' && (
         <div className="admin-glass-card">
           <h3 className="admin-form-title">
             {editingItem ? `✏️ Edit ${activeTab === 'musicAlbums' ? 'Album' : activeTab === 'announcements' ? 'Announcement' : activeTab === 'quests' ? 'Quest' : 'Shop Item'}` : `➕ Create New ${activeTab === 'musicAlbums' ? 'Album' : activeTab === 'announcements' ? 'Announcement' : activeTab === 'quests' ? 'Quest' : 'Shop Item'}`}
@@ -649,8 +730,58 @@ const AdminConfigPage = ({ token, onBack }) => {
           </div>
         )}
 
+        {/* ADDED: Meme Sounds editor (shown only on its tab) */}
+        {activeTab === 'memeSounds' && (
+          <div className="admin-glass-card">
+            <h3 className="admin-form-title">
+              {editingMeme ? `Edit Meme Sound` : `Create New Meme Sound`}
+            </h3>
+            <form onSubmit={handleMemeSoundSave} className="admin-form-grid">
+              <div className="admin-input-group">
+                <label>Name</label>
+                <input type="text" name="name" placeholder="Airhorn Blast" value={memeForm.name || ''} onChange={handleMemeSoundChange} required />
+              </div>
+              <div className="admin-input-group">
+                <label>Emoji</label>
+                <input type="text" name="emoji" placeholder="📢" value={memeForm.emoji || ''} onChange={handleMemeSoundChange} />
+              </div>
+              <div className="admin-input-group full-width">
+                <label>Upload Audio File (.mp3)</label>
+                <input type="file" name="audio_file" accept="audio/*" onChange={(e) => setMemeAudioFile(e.target.files[0])} required={!editingMeme} />
+              </div>
+              <div className="admin-form-actions full-width">
+                <button type="submit" className="admin-save-btn">{editingMeme ? 'Update Sound' : 'Create Sound'}</button>
+                {editingMeme && <button type="button" className="admin-cancel-btn" onClick={() => { setEditingMeme(null); setMemeForm({}); setMemeAudioFile(null); }}>Cancel</button>}
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* ADDED: Meme Sounds list (shown only on its tab) */}
+        {activeTab === 'memeSounds' && (
+          <div className="admin-list-section">
+            <h3 className="admin-list-title">📂 Existing Meme Sounds</h3>
+            {memeSounds.length === 0 ? <p className="admin-empty">No meme sounds found.</p> : (
+              <div className="admin-list-grid">
+                {memeSounds.map(item => (
+                  <div key={item.id} className="admin-list-item">
+                    <div className="admin-item-info">
+                      <span className="admin-item-name">{item.emoji || '🔊'} {item.name}</span>
+                      <span className="admin-item-meta">{item.audio_file || 'No audio'}</span>
+                    </div>
+                    <div className="admin-item-actions">
+                      <button className="admin-edit-btn" onClick={() => handleEditMemeSound(item)}>✏️ Edit</button>
+                      <button className="admin-delete-btn" onClick={() => handleMemeSoundDelete(item.id)}>🗑️</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* List Section */}
-        {activeTab !== 'profileThemes' && activeTab !== 'boardThemes' && (
+        {activeTab !== 'profileThemes' && activeTab !== 'boardThemes' && activeTab !== 'memeSounds' && (
         <div className="admin-list-section">
           <h3 className="admin-list-title">📂 Existing {activeTab === 'musicAlbums' ? 'Music Albums' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
           {loading ? <p className="admin-empty">Loading...</p> : getItems().length === 0 ? <p className="admin-empty">No items found.</p> : (

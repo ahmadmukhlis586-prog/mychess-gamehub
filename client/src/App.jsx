@@ -32,8 +32,8 @@ import PrivacyPage from './pages/PrivacyPage';
 import CinematicHero from './components/CinematicHero';
 import NotificationToast from './components/NotificationToast';
 import MusicCarousel from './components/MusicCarousel';
-import EntranceThemes from './components/EntranceThemes';
-import MatchCosmeticsPanel from './components/MatchCosmeticsPanel';
+import MemeSoundboard from './components/MemeSoundboard';
+import MemeSoundsPanel from './components/MemeSoundsPanel';
 import ChessQuiz from './components/ChessQuiz';
 import RecentMatchesFeed from './components/RecentMatchesFeed';
 import GameStatsBar from './components/GameStatsBar';
@@ -1203,7 +1203,6 @@ function App() {
       <div style={MATCH_STYLES.page}>
         <FloatingBackground />
         <MusicWidget />
-        <EntranceThemes token={localStorage.getItem(TOKEN_KEY)} players={players} socket={socketRef.current} />
         <MessageNotifier />
 
         {showMatchFoundVS && (
@@ -1394,6 +1393,13 @@ function App() {
               {/* ADDED: in-match reactions (owned emojis) — send to opponent + show
                   floating emoji animations from both players. Mounted additively. */}
               <EmojiReactions
+                token={localStorage.getItem(TOKEN_KEY)}
+                roomId={localStorage.getItem(ROOM_KEY)}
+                receiverId={opponentId}
+                socket={socketRef.current}
+                account={account}
+              />
+              <MemeSoundboard
                 token={localStorage.getItem(TOKEN_KEY)}
                 roomId={localStorage.getItem(ROOM_KEY)}
                 receiverId={opponentId}
@@ -1867,7 +1873,7 @@ function App() {
               </div>
               </ScrollReveal>
 
-              {/* Entrance banners — always last so new rows expand downward */}
+              {/* Meme Sounds — always last so new rows expand downward */}
               <ScrollReveal delay={0.3}>
               <div style={{
                 width: '100%',
@@ -1878,7 +1884,7 @@ function App() {
                 marginBottom: 40,
                 boxSizing: 'border-box'
               }}>
-                <MatchCosmeticsPanel token={localStorage.getItem(TOKEN_KEY)} />
+                <MemeSoundsPanel token={localStorage.getItem(TOKEN_KEY)} />
               </div>
               </ScrollReveal>
 
