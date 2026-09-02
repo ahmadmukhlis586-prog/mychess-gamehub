@@ -32,6 +32,10 @@ import PrivacyPage from './pages/PrivacyPage';
 import CinematicHero from './components/CinematicHero';
 import NotificationToast from './components/NotificationToast';
 import MusicCarousel from './components/MusicCarousel';
+import MoveTrails from './components/MoveTrails';
+import EntranceThemes from './components/EntranceThemes';
+import EmoteWheel from './components/EmoteWheel';
+import MatchCosmeticsPanel from './components/MatchCosmeticsPanel';
 import ChessQuiz from './components/ChessQuiz';
 import RecentMatchesFeed from './components/RecentMatchesFeed';
 import GameStatsBar from './components/GameStatsBar';
@@ -1201,6 +1205,17 @@ function App() {
       <div style={MATCH_STYLES.page}>
         <FloatingBackground />
         <MusicWidget />
+        <MoveTrails gameState={gameState} playerRole={playerRole} />
+        <EntranceThemes token={localStorage.getItem(TOKEN_KEY)} players={players} socket={socketRef.current} />
+        <EmoteWheel
+          token={localStorage.getItem(TOKEN_KEY)}
+          roomId={localStorage.getItem(ROOM_KEY)}
+          receiverId={opponentId}
+          socket={socketRef.current}
+          gameState={gameState}
+          playerRole={playerRole}
+          account={account}
+        />
         <MessageNotifier />
 
         {showMatchFoundVS && (
@@ -1861,6 +1876,21 @@ function App() {
                 boxSizing: 'border-box' 
               }}>
                 <MusicCarousel token={localStorage.getItem(TOKEN_KEY)} />
+              </div>
+              </ScrollReveal>
+
+              {/* Match cosmetics (move trails + entrance themes) — always last so new rows expand downward */}
+              <ScrollReveal delay={0.3}>
+              <div style={{
+                width: '100%',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                padding: '0 4px',
+                marginTop: 24,
+                marginBottom: 40,
+                boxSizing: 'border-box'
+              }}>
+                <MatchCosmeticsPanel token={localStorage.getItem(TOKEN_KEY)} />
               </div>
               </ScrollReveal>
 

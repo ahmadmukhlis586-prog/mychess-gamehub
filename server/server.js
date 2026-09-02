@@ -4568,6 +4568,266 @@ app.delete('/api/admin/board-themes/delete/:id', requireAuth, requireAdmin, asyn
     }
 });
 
+// ============================================
+// MATCH COSMETICS — MOVE TRAILS
+// ============================================
+app.get('/api/trails', async (req, res) => {
+    try {
+        const trails = (await pool.query('SELECT * FROM move_trails WHERE is_active = TRUE ORDER BY id ASC')).rows;
+        res.json({ ok: true, trails });
+    } catch (error) {
+        console.error('Trails list error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.get('/api/trails/equipped', requireAuth, async (req, res) => {
+    try {
+        const trail = (await pool.query(
+            'SELECT mt.* FROM move_trails mt JOIN user_move_trail umt ON umt.trail_id = mt.id WHERE umt.account_id = $1',
+            [req.account.id]
+        )).rows[0] || null;
+        res.json({ ok: true, trail });
+    } catch (error) {
+        console.error('Trails equipped error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.post('/api/trails/equip', requireAuth, async (req, res) => {
+    try {
+        const { trailId } = req.body;
+        const trail = (await pool.query('SELECT id FROM move_trails WHERE id = $1 AND is_active = TRUE', [trailId])).rows[0];
+        if (!trail) return res.status(404).json({ ok: false, message: 'Trail not found' });
+        await pool.query(
+            'INSERT INTO user_move_trail (account_id, trail_id) VALUES ($1, $2) ON CONFLICT (account_id) DO UPDATE SET trail_id = EXCLUDED.trail_id, updated_at = NOW()',
+            [req.account.id, trailId]
+        );
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Trail equip error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.post('/api/trails/unequip', requireAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM user_move_trail WHERE account_id = $1', [req.account.id]);
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Trail unequip error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+// ============================================
+// MATCH COSMETICS — ENTRANCE THEMES
+// ============================================
+app.get('/api/entrance/themes', async (req, res) => {
+    try {
+        const themes = (await pool.query('SELECT * FROM entrance_themes WHERE is_active = TRUE ORDER BY id ASC')).rows;
+        res.json({ ok: true, themes });
+    } catch (error) {
+        console.error('Entrance themes list error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.get('/api/entrance/equipped', requireAuth, async (req, res) => {
+    try {
+        const theme = (await pool.query(
+            'SELECT et.* FROM entrance_themes et JOIN user_entrance_theme uet ON uet.theme_id = et.id WHERE uet.account_id = $1',
+            [req.account.id]
+        )).rows[0] || null;
+        res.json({ ok: true, theme });
+    } catch (error) {
+        console.error('Entrance equipped error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.get('/api/entrance/theme/:accountId', requireAuth, async (req, res) => {
+    try {
+        const theme = (await pool.query(
+            'SELECT et.* FROM entrance_themes et JOIN user_entrance_theme uet ON uet.theme_id = et.id WHERE uet.account_id = $1',
+            [req.params.accountId]
+        )).rows[0] || null;
+        res.json({ ok: true, theme });
+    } catch (error) {
+        console.error('Entrance theme by account error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.post('/api/entrance/equip', requireAuth, async (req, res) => {
+    try {
+        const { themeId } = req.body;
+        const theme = (await pool.query('SELECT id FROM entrance_themes WHERE id = $1 AND is_active = TRUE', [themeId])).rows[0];
+        if (!theme) return res.status(404).json({ ok: false, message: 'Entrance theme not found' });
+        await pool.query(
+            'INSERT INTO user_entrance_theme (account_id, theme_id) VALUES ($1, $2) ON CONFLICT (account_id) DO UPDATE SET theme_id = EXCLUDED.theme_id, updated_at = NOW()',
+            [req.account.id, themeId]
+        );
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Entrance equip error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.post('/api/entrance/unequip', requireAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM user_entrance_theme WHERE account_id = $1', [req.account.id]);
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Entrance unequip error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+// ============================================
+// MATCH COSMETICS — EMOTE WHEEL (chat zooms)
+// ============================================
+app.get('/api/emotes', requireAuth, async (req, res) => {
+    try {
+        const emotes = (await pool.query('SELECT * FROM emotes WHERE is_active = TRUE ORDER BY cost_elo ASC, id ASC')).rows;
+        const owned = (await pool.query('SELECT emote_id FROM user_emote_inventory WHERE account_id = $1', [req.account.id])).rows.map(r => r.emote_id);
+        res.json({ ok: true, emotes, owned });
+    } catch (error) {
+        console.error('Emotes list error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.post('/api/emotes/buy', requireAuth, async (req, res) => {
+    try {
+        const { emoteId } = req.body;
+        const emote = (await pool.query('SELECT * FROM emotes WHERE id = $1 AND is_active = TRUE', [emoteId])).rows[0];
+        if (!emote) return res.status(404).json({ ok: false, message: 'Emote not found' });
+        const existing = (await pool.query('SELECT 1 FROM user_emote_inventory WHERE account_id = $1 AND emote_id = $2', [req.account.id, emoteId])).rows[0];
+        if (existing && emote.cost_elo > 0) return res.status(400).json({ ok: false, message: 'Already owned' });
+        if (emote.cost_elo > 0) {
+            const acc = await db.findAccountById(req.account.id);
+            if ((acc.elo || 0) < emote.cost_elo) return res.status(400).json({ ok: false, message: 'Not enough ELO' });
+            await db.addElo(req.account.id, -emote.cost_elo);
+        }
+        await pool.query('INSERT INTO user_emote_inventory (account_id, emote_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [req.account.id, emoteId]);
+        const updated = await db.findAccountById(req.account.id);
+        res.json({ ok: true, newElo: updated ? updated.elo : 0 });
+    } catch (error) {
+        console.error('Emote buy error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.post('/api/emotes/send', requireAuth, async (req, res) => {
+    try {
+        const { roomId, receiverId, emoji, label, tag } = req.body;
+        if (!roomId || !emoji) return res.status(400).json({ ok: false });
+        const bubbleText = label ? `${emoji} ${label}` : emoji;
+        await pool.query(
+            'INSERT INTO game_reactions (game_room_id, sender_id, receiver_id, emoji) VALUES ($1,$2,$3,$4)',
+            [roomId, req.account.id, receiverId || null, bubbleText]
+        );
+        if (io) io.to(roomId).emit('chatZoom', { senderId: req.account.id, senderName: req.account.username || 'Player', emoji, label: label || '', tag: tag || 'generic' });
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Emote send error:', error);
+        res.status(500).json({ ok: false });
+    }
+});
+
+// ============================================
+// MATCH COSMETICS — SCHEMA ENSURE (run at boot so production DB is always ready)
+// ============================================
+async function ensureMatchCosmeticsSchema() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS move_trails (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            trail_key VARCHAR(50) NOT NULL UNIQUE,
+            color_hex VARCHAR(20) DEFAULT '#c084fc',
+            glow_hex VARCHAR(20) DEFAULT '#7c3aed',
+            rarity VARCHAR(30) DEFAULT 'common',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS user_move_trail (
+            account_id UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+            trail_id INT REFERENCES move_trails(id) ON DELETE CASCADE,
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS entrance_themes (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            tagline VARCHAR(160) DEFAULT '',
+            emoji VARCHAR(20) DEFAULT '⚡',
+            audio_file TEXT NOT NULL,
+            rarity VARCHAR(30) DEFAULT 'common',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS user_entrance_theme (
+            account_id UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+            theme_id INT REFERENCES entrance_themes(id) ON DELETE CASCADE,
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS emotes (
+            id SERIAL PRIMARY KEY,
+            emoji TEXT NOT NULL,
+            label VARCHAR(80) NOT NULL UNIQUE,
+            tag VARCHAR(40) DEFAULT 'generic',
+            cost_elo INT DEFAULT 0,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE TABLE IF NOT EXISTS user_emote_inventory (
+            account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+            emote_id INT NOT NULL REFERENCES emotes(id) ON DELETE CASCADE,
+            PRIMARY KEY (account_id, emote_id)
+        );
+    `);
+
+    await pool.query(`
+        INSERT INTO move_trails (name, trail_key, color_hex, glow_hex, rarity) VALUES
+            ('Comet', 'comet', '#c084fc', '#7c3aed', 'common'),
+            ('Ember', 'ember', '#fb923c', '#ef4444', 'uncommon'),
+            ('Lightning', 'lightning', '#22d3ee', '#0ea5e9', 'rare'),
+            ('Phantom', 'phantom', '#a3e635', '#65a30d', 'rare'),
+            ('Royal Gold', 'royal', '#fbbf24', '#f59e0b', 'epic'),
+            ('Galaxy Pearl', 'pearl', '#e879f9', '#d946ef', 'legendary')
+        ON CONFLICT (trail_key) DO NOTHING;
+    `);
+
+    await pool.query(`
+        INSERT INTO entrance_themes (name, tagline, emoji, audio_file, rarity) VALUES
+            ('Neon Star', 'Walk in like a main character', '✨', '/assets/audio/my-intro-sound.mp3', 'common'),
+            ('Fashion Flex', 'Style on them before move one', '🕶️', '/assets/audio/my-intro-sound-fashion.mp3', 'rare'),
+            ('Hype Build', 'Turn the lobby up', '🔥', '/assets/audio/h2h-styles.mp3', 'epic')
+        ON CONFLICT (name) DO NOTHING;
+    `);
+
+    await pool.query(`
+        INSERT INTO emotes (emoji, label, tag, cost_elo) VALUES
+            ('⚡', 'Check!', 'check', 0),
+            ('😱', 'In check!', 'check', 0),
+            ('👀', 'Watch it!', 'check', 0),
+            ('💀', 'Bruh.', 'blunder', 0),
+            ('🤡', 'Clown move', 'blunder', 0),
+            ('🤯', 'Brain exploded', 'blunder', 20),
+            ('👑', 'King move', 'win', 0),
+            ('🎉', 'EZ clap', 'win', 0),
+            ('🔥', 'On fire!', 'win', 10),
+            ('🥶', 'Ice cold', 'win', 20),
+            ('💎', 'Diamond clutch', 'win', 100),
+            ('😎', 'GG', 'generic', 0),
+            ('🧠', '5 head', 'generic', 0),
+            ('🚀', 'Boosted', 'generic', 0),
+            ('💅', 'Slay', 'generic', 0)
+        ON CONFLICT (label) DO NOTHING;
+    `);
+}
+
 /*
 |--------------------------------------------------------------------------
 | ✅ SERVE REACT FRONTEND (Production Build)
@@ -4650,6 +4910,13 @@ const serverInstance = server.listen(PORT, async () => {
     console.log('==========================================');
     console.log(`Server:  http://localhost:${PORT}`);
     console.log(`Health:  http://localhost:${PORT}/health`);
+
+    try {
+        await ensureMatchCosmeticsSchema();
+        console.log('✅ match cosmetics tables ensured');
+    } catch (e) {
+        console.error('⚠️ Failed to ensure match cosmetics schema:', e.message);
+    }
 
     try {
         await pool.query("ALTER TABLE tournament_duels ADD COLUMN IF NOT EXISTS room_id VARCHAR(6)");
