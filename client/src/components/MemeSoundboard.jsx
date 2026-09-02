@@ -21,13 +21,13 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
     const load = async () => {
       try {
         const [listRes, eqRes] = await Promise.all([
-          fetch(`${API_BASE}/meme-sounds`),
-          token ? fetch(`${API_BASE}/meme-sounds/equipped`, { headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
+          fetch(`${API_BASE}/meme-sounds`, { cache: 'no-store' }),
+          token ? fetch(`${API_BASE}/meme-sounds/equipped`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } }) : Promise.resolve(null),
         ]);
-        const list = await listRes.json();
-        const eq = eqRes ? await eqRes.json() : null;
+        const list = await listRes.json().catch(() => null);
+        const eq = eqRes ? await eqRes.json().catch(() => null) : null;
         if (!mounted) return;
-        if (list.ok) setSounds(list.sounds || []);
+        if (list && list.ok) setSounds(list.sounds || []);
         if (eq && eq.ok) {
           const byId = Object.fromEntries((list.sounds || []).map(s => [s.id, s]));
           setEquipped((eq.soundIds || []).map(id => byId[id]).filter(Boolean));
@@ -78,6 +78,20 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
     } catch (e) { /* ignore */ }
   }, [aiMode, socket, roomId, token, receiverId, playSound]);
 
+  const toggleOpen = useCallback(async () => {
+    if (!open) {
+      try {
+        const eqRes = await fetch(`${API_BASE}/meme-sounds/equipped`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } });
+        const eq = await eqRes.json().catch(() => null);
+        if (eq && eq.ok) {
+          const byId = Object.fromEntries((sounds || []).map(s => [s.id, s]));
+          setEquipped((eq.soundIds || []).map(id => byId[id]).filter(Boolean));
+        }
+      } catch (e) { /* ignore */ }
+    }
+    setOpen((o) => !o);
+  }, [open, token, sounds]);
+
   useEffect(() => {
     if (!socket || aiMode) return undefined;
     const handler = (data) => {
@@ -99,7 +113,7 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
       <button
         type="button"
         className={`msb-toggle ${rowVisible ? 'msb-on' : ''}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggleOpen}
         title="Meme sounds"
       >
         {rowVisible ? '✕' : '🔊'}

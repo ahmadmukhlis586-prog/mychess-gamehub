@@ -4602,6 +4602,11 @@ app.post('/api/meme-sounds/equip', requireAuth, async (req, res) => {
             'INSERT INTO user_meme_sound (account_id, meme_sound_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
             [req.account.id, memeSoundId]
         );
+        const check = (await pool.query(
+            'SELECT 1 FROM user_meme_sound WHERE account_id = $1 AND meme_sound_id = $2',
+            [req.account.id, memeSoundId]
+        )).rows.length;
+        if (!check) return res.status(409).json({ ok: false, message: 'Could not equip that meme sound. Please try again.' });
         res.json({ ok: true });
     } catch (error) {
         console.error('Meme sound equip error:', error);
@@ -4613,6 +4618,11 @@ app.post('/api/meme-sounds/unequip', requireAuth, async (req, res) => {
     try {
         const { memeSoundId } = req.body;
         await pool.query('DELETE FROM user_meme_sound WHERE account_id = $1 AND meme_sound_id = $2', [req.account.id, memeSoundId]);
+        const check = (await pool.query(
+            'SELECT 1 FROM user_meme_sound WHERE account_id = $1 AND meme_sound_id = $2',
+            [req.account.id, memeSoundId]
+        )).rows.length;
+        if (check) return res.status(409).json({ ok: false, message: 'Could not unequip that meme sound. Please try again.' });
         res.json({ ok: true });
     } catch (error) {
         console.error('Meme sound unequip error:', error);

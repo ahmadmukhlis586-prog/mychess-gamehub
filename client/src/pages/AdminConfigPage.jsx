@@ -358,7 +358,7 @@ const AdminConfigPage = ({ token, onBack }) => {
   // =========================================================================
   const fetchMemeSoundList = async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/meme-sounds`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/admin/meme-sounds`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } });
       const result = await res.json();
       if (result.ok) setMemeSounds(result.sounds || []);
     } catch (error) {

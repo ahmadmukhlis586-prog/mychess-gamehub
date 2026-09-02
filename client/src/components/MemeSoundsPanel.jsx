@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { playClickSound } from '../helpers';
 import { API_BASE, TOKEN_KEY } from '../config';
 import './meme_sounds.css';
@@ -17,26 +17,22 @@ const MemeSoundsPanel = ({ token }) => {
   const [ring, setRing] = useState(null);
   const audioRef = useRef(null);
 
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const [listRes, eqRes] = await Promise.all([
-          fetch(`${API_BASE}/meme-sounds`),
-          fetch(`${API_BASE}/meme-sounds/equipped`, { headers: { Authorization: `Bearer ${token}` } }),
-        ]);
-        const list = await listRes.json();
-        const eq = await eqRes.json();
-        if (!mounted) return;
-        if (list.ok) setSounds(list.sounds || []);
-        if (eq.ok) setEquippedIds(new Set(eq.soundIds || []));
-      } catch (e) {
-        console.error('Meme sounds panel load error:', e);
-      }
-    };
-    load();
-    return () => { mounted = false; };
+  const load = useCallback(async () => {
+    try {
+      const [listRes, eqRes] = await Promise.all([
+        fetch(`${API_BASE}/meme-sounds`, { cache: 'no-store' }),
+        fetch(`${API_BASE}/meme-sounds/equipped`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      const list = await listRes.json().catch(() => null);
+      const eq = await eqRes.json().catch(() => null);
+      if (list && list.ok) setSounds(list.sounds || []);
+      if (eq && eq.ok) setEquippedIds(new Set(eq.soundIds || []));
+    } catch (e) {
+      console.error('Meme sounds panel load error:', e);
+    }
   }, [token]);
+
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     return () => { if (audioRef.current) { try { audioRef.current.pause(); } catch (e) {} } };
@@ -48,7 +44,7 @@ const MemeSoundsPanel = ({ token }) => {
     const a = new Audio(resolveAudio(sound.audio_file));
     a.volume = 0.95;
     audioRef.current = a;
-    a.onended = () => setPlayingId(null);
+    a.onended = () => setPlayingId((p) => (p === sound.id ? null : p));
     a.play().catch(() => {});
     setPlayingId(sound.id);
     const ringId = Date.now() + Math.random();
@@ -59,24 +55,33 @@ const MemeSoundsPanel = ({ token }) => {
 
   const toggleEquip = async (sound, e) => {
     e.stopPropagation();
-    if (equippedIds.has(sound.id)) {
-      setEquippedIds((prev) => { const n = new Set(prev); n.delete(sound.id); return n; });
-      await fetch(`${API_BASE}/meme-sounds/unequip`, {
+    const willEquip = !equippedIds.has(sound.id);
+    if (willEquip && equippedIds.size >= MAX_SOUNDS) {
+      alert(`You can equip up to ${MAX_SOUNDS} meme sounds. Unequip one first!`);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/meme-sounds/${willEquip ? 'equip' : 'unequip'}`, {
         method: 'POST',
+        cache: 'no-store',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ memeSoundId: sound.id }),
-      }).catch(() => {});
-    } else {
-      if (equippedIds.size >= MAX_SOUNDS) {
-        alert(`You can equip up to ${MAX_SOUNDS} meme sounds. Unequip one first!`);
-        return;
+      });
+      const result = await res.json().catch(() => null);
+      if (res.ok && result && result.ok) {
+        setEquippedIds((prev) => {
+          const n = new Set(prev);
+          if (willEquip) n.add(sound.id); else n.delete(sound.id);
+          return n;
+        });
+      } else {
+        if (result && result.message) alert(result.message);
+        else alert('Could not update your equipped sounds. Please try again.');
+        load();
       }
-      setEquippedIds((prev) => new Set(prev).add(sound.id));
-      await fetch(`${API_BASE}/meme-sounds/equip`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memeSoundId: sound.id }),
-      }).catch(() => {});
+    } catch (err) {
+      alert('Network error updating your equipped sounds.');
+      load();
     }
   };
 
