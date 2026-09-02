@@ -23,6 +23,19 @@ const MemeSoundsPanel = ({ token }) => {
     } catch (e) {}
   }, []);
 
+  const readEquipCache = useCallback(() => {
+    try {
+      const raw = localStorage.getItem('mychess_equipped_memes');
+      if (!raw) return [];
+      const { ids, at } = JSON.parse(raw);
+      if (!Array.isArray(ids)) return [];
+      if (Date.now() - (at || 0) > 24 * 60 * 60 * 1000) return [];
+      return ids;
+    } catch (e) {
+      return [];
+    }
+  }, []);
+
   const load = useCallback(async () => {
     try {
       const [listRes, eqRes] = await Promise.all([
@@ -34,8 +47,13 @@ const MemeSoundsPanel = ({ token }) => {
       if (list && list.ok) setSounds(list.sounds || []);
       if (eq && eq.ok) {
         const ids = eq.soundIds || [];
-        setEquippedIds(new Set(ids));
-        if (ids.length > 0) cacheEquipped(ids);
+        if (ids.length > 0) {
+          setEquippedIds(new Set(ids));
+          cacheEquipped(ids);
+        } else {
+          const cached = readEquipCache();
+          if (cached.length > 0) setEquippedIds(new Set(cached));
+        }
       }
     } catch (e) {
       console.error('Meme sounds panel load error:', e);
