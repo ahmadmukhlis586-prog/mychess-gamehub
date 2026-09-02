@@ -145,6 +145,30 @@ export const getMusicStatus = () => {
   return { isPlaying: isMusicPlaying, audio: bgMusic };
 };
 
+// ----- 2b. BACKGROUND MUSIC DUCKING (so short sounds stay audible over the music) -----
+export const restoreBackgroundMusic = () => {
+  if (!bgMusic) return;
+  if (bgMusic._duckRestore) {
+    clearTimeout(bgMusic._duckRestore);
+    bgMusic._duckRestore = null;
+  }
+  const savedVolume = localStorage.getItem('bgMusicVolume');
+  bgMusic.volume = savedVolume !== null ? parseFloat(savedVolume) : 0.5;
+};
+
+export const duckBackgroundMusic = (durationMs = 5000, duckLevel = 0.15) => {
+  if (!bgMusic || bgMusic.paused) return;
+  const savedVolume = localStorage.getItem('bgMusicVolume');
+  const baseVolume = savedVolume !== null ? parseFloat(savedVolume) : 0.5;
+  if (bgMusic._duckRestore) {
+    clearTimeout(bgMusic._duckRestore);
+  }
+  bgMusic.volume = Math.min(duckLevel, baseVolume * 0.3);
+  bgMusic._duckRestore = setTimeout(() => {
+    restoreBackgroundMusic();
+  }, durationMs);
+};
+
 const updateMusicUI = (playing) => {
   const toggleBtn = document.getElementById('music-toggle-btn');
   

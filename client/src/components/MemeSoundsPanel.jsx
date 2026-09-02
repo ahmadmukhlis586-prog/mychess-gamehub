@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { playClickSound } from '../helpers';
+import { playClickSound, duckBackgroundMusic, restoreBackgroundMusic } from '../helpers';
 import { API_BASE, TOKEN_KEY } from '../config';
 import './meme_sounds.css';
 
@@ -69,10 +69,16 @@ const MemeSoundsPanel = ({ token }) => {
   const preview = async (sound) => {
     playClickSound();
     try { if (audioRef.current) audioRef.current.pause(); } catch (e) {}
+    duckBackgroundMusic();
     const a = new Audio(resolveAudio(sound.audio_file));
     a.volume = 0.95;
     audioRef.current = a;
-    a.onended = () => setPlayingId((p) => (p === sound.id ? null : p));
+    const finish = () => {
+      setPlayingId((p) => (p === sound.id ? null : p));
+      restoreBackgroundMusic();
+    };
+    a.onended = finish;
+    a.onerror = finish;
     a.play().catch(() => {});
     setPlayingId(sound.id);
     const ringId = Date.now() + Math.random();

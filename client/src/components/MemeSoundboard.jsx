@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { API_BASE } from '../config';
+import { duckBackgroundMusic, restoreBackgroundMusic } from '../helpers';
 import './meme_sounds.css';
 
 const CACHE_KEY = 'mychess_equipped_memes';
@@ -82,7 +83,13 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
     a.volume = 0.95;
     audioRef.current = a;
     const startedId = sound.id;
-    a.onended = () => setPlayingId((p) => (p === startedId ? null : p));
+    const finish = () => {
+      setPlayingId((p) => (p === startedId ? null : p));
+      restoreBackgroundMusic();
+    };
+    duckBackgroundMusic();
+    a.onended = finish;
+    a.onerror = finish;
     a.play().catch(() => {});
     setPlayingId(startedId);
     const waveId = Date.now() + Math.random();
