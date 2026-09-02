@@ -68,12 +68,8 @@ const MemeSoundsPanel = ({ token }) => {
         body: JSON.stringify({ memeSoundId: sound.id }),
       });
       const result = await res.json().catch(() => null);
-      if (res.ok && result && result.ok) {
-        setEquippedIds((prev) => {
-          const n = new Set(prev);
-          if (willEquip) n.add(sound.id); else n.delete(sound.id);
-          return n;
-        });
+      if (res.ok && result && result.ok && Array.isArray(result.equipped)) {
+        setEquippedIds(new Set(result.equipped));
       } else {
         if (result && result.message) alert(result.message);
         else alert('Could not update your equipped sounds. Please try again.');

@@ -4607,7 +4607,11 @@ app.post('/api/meme-sounds/equip', requireAuth, async (req, res) => {
             [req.account.id, memeSoundId]
         )).rows.length;
         if (!check) return res.status(409).json({ ok: false, message: 'Could not equip that meme sound. Please try again.' });
-        res.json({ ok: true });
+        const equipped = (await pool.query(
+            'SELECT meme_sound_id FROM user_meme_sound WHERE account_id = $1 ORDER BY equipped_at ASC',
+            [req.account.id]
+        )).rows.map(r => r.meme_sound_id);
+        res.json({ ok: true, equipped });
     } catch (error) {
         console.error('Meme sound equip error:', error);
         res.status(500).json({ ok: false });
@@ -4623,7 +4627,11 @@ app.post('/api/meme-sounds/unequip', requireAuth, async (req, res) => {
             [req.account.id, memeSoundId]
         )).rows.length;
         if (check) return res.status(409).json({ ok: false, message: 'Could not unequip that meme sound. Please try again.' });
-        res.json({ ok: true });
+        const equipped = (await pool.query(
+            'SELECT meme_sound_id FROM user_meme_sound WHERE account_id = $1 ORDER BY equipped_at ASC',
+            [req.account.id]
+        )).rows.map(r => r.meme_sound_id);
+        res.json({ ok: true, equipped });
     } catch (error) {
         console.error('Meme sound unequip error:', error);
         res.status(500).json({ ok: false });
