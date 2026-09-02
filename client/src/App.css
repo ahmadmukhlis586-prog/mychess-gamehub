@@ -3565,7 +3565,7 @@ a, a:hover, a:focus, a:active, button, .btn {
    Slightly tighter button padding gives extra room for the single row.
    Mobile (<=768px) already lays out as a grid and is intentionally untouched. */
 @media (min-width: 769px) {
-  .mychess-home-header { width: 100%; overflow: visible; padding: 0 16px; justify-content: center; gap: 40px; }
+  .mychess-home-header:has(.mychess-header-actions) { width: 100%; overflow: visible; padding: 0 16px; justify-content: center; gap: 40px; }
   .mychess-header-actions { flex-wrap: nowrap; }
   .mychess-header-actions .mychess-shop-button { padding: 7px 10px; }
   .mychess-header-actions .mychess-home-logout { padding: 7px 10px; }
