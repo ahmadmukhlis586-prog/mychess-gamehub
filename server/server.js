@@ -4597,7 +4597,7 @@ app.post('/api/meme-sounds/equip', requireAuth, async (req, res) => {
         const sound = (await pool.query('SELECT id FROM meme_sounds WHERE id = $1 AND is_active = TRUE', [memeSoundId])).rows[0];
         if (!sound) return res.status(404).json({ ok: false, message: 'Meme sound not found' });
         const count = (await pool.query('SELECT COUNT(*)::int AS n FROM user_meme_sound WHERE account_id = $1', [req.account.id])).rows[0].n;
-        if (count >= 12) return res.status(400).json({ ok: false, message: 'Max 12 meme sounds' });
+        if (count >= 5) return res.status(400).json({ ok: false, message: 'You can equip up to 5 meme sounds. Unequip one first.' });
         await pool.query(
             'INSERT INTO user_meme_sound (account_id, meme_sound_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
             [req.account.id, memeSoundId]
@@ -4753,6 +4753,17 @@ async function ensureMemeSoundsSchema() {
             equipped_at TIMESTAMPTZ DEFAULT NOW(),
             PRIMARY KEY (account_id, meme_sound_id)
         );
+    `);
+
+    // Enforce the max of 5 equipped meme sounds per player (trim older picks).
+    await pool.query(`
+        DELETE FROM user_meme_sound u
+        WHERE (
+            SELECT COUNT(*) FROM user_meme_sound x
+            WHERE x.account_id = u.account_id
+              AND (x.equipped_at > u.equipped_at
+                   OR (x.equipped_at = u.equipped_at AND x.meme_sound_id > u.meme_sound_id))
+        ) >= 5;
     `);
 
     await pool.query(`
