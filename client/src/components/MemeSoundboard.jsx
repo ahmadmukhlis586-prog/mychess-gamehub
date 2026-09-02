@@ -2,6 +2,27 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { API_BASE } from '../config';
 import './meme_sounds.css';
 
+const CACHE_KEY = 'mychess_equipped_memes';
+
+const readEquipCache = () => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return [];
+    const { ids, at } = JSON.parse(raw);
+    if (!Array.isArray(ids)) return [];
+    if (Date.now() - (at || 0) > 24 * 60 * 60 * 1000) return [];
+    return ids;
+  } catch (e) {
+    return [];
+  }
+};
+
+const writeEquipCache = (ids) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ids, at: Date.now() }));
+  } catch (e) { /* ignore */ }
+};
+
 const resolveAudio = (file) => {
   if (!file) return '';
   return file.startsWith('http') ? file : `${window.location.origin}${file}`;
@@ -9,12 +30,19 @@ const resolveAudio = (file) => {
 
 const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) => {
   const [sounds, setSounds] = useState([]);
-  const [equipped, setEquipped] = useState([]);
+  const [equippedIds, setEquippedIds] = useState(() => readEquipCache());
   const [open, setOpen] = useState(aiMode);
   const [playingId, setPlayingId] = useState(null);
   const [wave, setWave] = useState(null);
   const [floats, setFloats] = useState([]);
   const audioRef = useRef(null);
+
+  const equipped = sounds.filter((s) => equippedIds.includes(s.id));
+
+  const applyEquippedIds = useCallback((ids) => {
+    setEquippedIds(ids);
+    writeEquipCache(ids);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -28,15 +56,24 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
         const eq = eqRes ? await eqRes.json().catch(() => null) : null;
         if (!mounted) return;
         if (list && list.ok) setSounds(list.sounds || []);
+        const cached = readEquipCache();
         if (eq && eq.ok) {
-          const byId = Object.fromEntries((list.sounds || []).map(s => [s.id, s]));
-          setEquipped((eq.soundIds || []).map(id => byId[id]).filter(Boolean));
+          const serverIds = eq.soundIds || [];
+          if (serverIds.length > 0) {
+            applyEquippedIds(serverIds);
+          } else if (cached.length > 0) {
+            setEquippedIds(cached);
+          } else {
+            setEquippedIds([]);
+          }
+        } else if (cached.length > 0) {
+          setEquippedIds(cached);
         }
       } catch (e) { /* ignore */ }
     };
     load();
     return () => { mounted = false; };
-  }, [token]);
+  }, [token, applyEquippedIds]);
 
   useEffect(() => {
     if (audioRef.current) { try { audioRef.current.pause(); } catch (e) {} }
@@ -84,13 +121,17 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
         const eqRes = await fetch(`${API_BASE}/meme-sounds/equipped`, { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } });
         const eq = await eqRes.json().catch(() => null);
         if (eq && eq.ok) {
-          const byId = Object.fromEntries((sounds || []).map(s => [s.id, s]));
-          setEquipped((eq.soundIds || []).map(id => byId[id]).filter(Boolean));
+          const serverIds = eq.soundIds || [];
+          if (serverIds.length > 0) {
+            applyEquippedIds(serverIds);
+          } else if (equippedIds.length > 0) {
+            setEquippedIds(equippedIds);
+          }
         }
       } catch (e) { /* ignore */ }
     }
     setOpen((o) => !o);
-  }, [open, token, sounds]);
+  }, [open, token, equippedIds, applyEquippedIds]);
 
   useEffect(() => {
     if (!socket || aiMode) return undefined;

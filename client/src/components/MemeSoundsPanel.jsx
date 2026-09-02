@@ -17,6 +17,12 @@ const MemeSoundsPanel = ({ token }) => {
   const [ring, setRing] = useState(null);
   const audioRef = useRef(null);
 
+  const cacheEquipped = useCallback((ids) => {
+    try {
+      localStorage.setItem('mychess_equipped_memes', JSON.stringify({ ids, at: Date.now() }));
+    } catch (e) {}
+  }, []);
+
   const load = useCallback(async () => {
     try {
       const [listRes, eqRes] = await Promise.all([
@@ -26,11 +32,15 @@ const MemeSoundsPanel = ({ token }) => {
       const list = await listRes.json().catch(() => null);
       const eq = await eqRes.json().catch(() => null);
       if (list && list.ok) setSounds(list.sounds || []);
-      if (eq && eq.ok) setEquippedIds(new Set(eq.soundIds || []));
+      if (eq && eq.ok) {
+        const ids = eq.soundIds || [];
+        setEquippedIds(new Set(ids));
+        if (ids.length > 0) cacheEquipped(ids);
+      }
     } catch (e) {
       console.error('Meme sounds panel load error:', e);
     }
-  }, [token]);
+  }, [token, cacheEquipped]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -70,6 +80,7 @@ const MemeSoundsPanel = ({ token }) => {
       const result = await res.json().catch(() => null);
       if (res.ok && result && result.ok && Array.isArray(result.equipped)) {
         setEquippedIds(new Set(result.equipped));
+        cacheEquipped(result.equipped);
       } else {
         if (result && result.message) alert(result.message);
         else alert('Could not update your equipped sounds. Please try again.');
