@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { playClickSound, duckBackgroundMusic, restoreBackgroundMusic } from '../helpers';
 import { API_BASE, TOKEN_KEY } from '../config';
 import './meme_sounds.css';
+import MemeSoundsCarousel from './MemeSoundsCarousel';
 
-const MAX_SOUNDS = 12;
+const MAX_SOUNDS = 5;
 
 const resolveAudio = (file) => {
   if (!file) return '';
@@ -61,6 +62,17 @@ const MemeSoundsPanel = ({ token }) => {
   }, [token, cacheEquipped]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Auto-detect new/changed meme sounds (admin adds) without any page refresh.
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 8000);
+    window.addEventListener('focus', load);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('focus', load);
+    };
+  }, [load]);
 
   useEffect(() => {
     return () => { if (audioRef.current) { try { audioRef.current.pause(); } catch (e) {} } };
@@ -122,7 +134,7 @@ const MemeSoundsPanel = ({ token }) => {
         <div className="msp-head-icon">🔊</div>
         <div className="msp-head-text">
           <h2>Meme Sounds</h2>
-          <p>Click a sound to hear it · tap ⚡ to equip for matches (up to {MAX_SOUNDS}). Your equipped sounds appear in-match and in the AI Arena.</p>
+          <p>Browse with the ‹ › arrows · tap ▶ to hear it · tap ⚡ to equip (up to {MAX_SOUNDS}). Your equipped sounds appear in-match and in the AI Arena.</p>
         </div>
         <div className="msp-eq" aria-hidden="true">
           <span /><span /><span /><span /><span />
@@ -133,35 +145,14 @@ const MemeSoundsPanel = ({ token }) => {
       {sounds.length === 0 ? (
         <div className="msp-empty">No meme sounds available yet. Ask an admin to add some!</div>
       ) : (
-        <div className="msp-grid">
-          {sounds.map((sound) => {
-            const isEquipped = equippedIds.has(sound.id);
-            const atCap = !isEquipped && equippedIds.size >= MAX_SOUNDS;
-            return (
-              <div
-                key={sound.id}
-                className={`msp-tile ${isEquipped ? 'equipped' : ''} ${playingId === sound.id ? 'playing' : ''}`}
-                onClick={() => preview(sound)}
-                title={sound.name}
-              >
-                {ring && ring.soundId === sound.id && <span className="msp-ring" key={ring.id} />}
-                <span className="msp-tile-emoji">{sound.emoji || '🔊'}</span>
-                <div className="msp-tile-name">{sound.name}</div>
-                <div className="msp-tile-actions">
-                  <button
-                    type="button"
-                    className={`msp-tile-btn ${isEquipped ? 'eq-on' : ''} ${atCap ? 'disabled' : ''}`}
-                    onClick={(e) => toggleEquip(sound, e)}
-                    disabled={atCap}
-                    title={isEquipped ? 'Unequip' : atCap ? `Max ${MAX_SOUNDS} reached` : 'Equip'}
-                  >
-                    {isEquipped ? '✓ EQUIPPED' : '⚡ EQUIP'}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <MemeSoundsCarousel
+          sounds={sounds}
+          equippedIds={equippedIds}
+          playingId={playingId}
+          ring={ring}
+          onPreview={preview}
+          onToggleEquip={toggleEquip}
+        />
       )}
     </section>
   );
