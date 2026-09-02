@@ -75,21 +75,19 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
     return () => { mounted = false; };
   }, [token, applyEquippedIds]);
 
-  useEffect(() => {
-    if (audioRef.current) { try { audioRef.current.pause(); } catch (e) {} }
-  }, [playingId]);
-
   const playSound = useCallback((sound, sourceName) => {
     if (!sound?.audio_file) return;
     try { if (audioRef.current) audioRef.current.pause(); } catch (e) {}
     const a = new Audio(resolveAudio(sound.audio_file));
     a.volume = 0.95;
     audioRef.current = a;
+    const startedId = sound.id;
+    a.onended = () => setPlayingId((p) => (p === startedId ? null : p));
     a.play().catch(() => {});
-    setPlayingId(sound.id);
+    setPlayingId(startedId);
     const waveId = Date.now() + Math.random();
     setWave({ id: waveId, emoji: sound.emoji || '🔊' });
-    setTimeout(() => setPlayingId(null), 1400);
+    setTimeout(() => setPlayingId((p) => (p === startedId ? null : p)), 1400);
     setTimeout(() => setWave((w) => (w && w.id === waveId ? null : w)), 700);
     const floatId = Date.now() + Math.random();
     setFloats((prev) => [...prev, { id: floatId, emoji: sound.emoji || '🔊' }]);
