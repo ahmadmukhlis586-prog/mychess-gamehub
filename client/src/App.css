@@ -3555,16 +3555,17 @@ a, a:hover, a:focus, a:active, button, .btn {
 .mychess-install-btn:hover { background: rgba(124, 58, 237, 0.3); transform: translateY(-1px); }
 .mychess-install-btn:active { transform: translateY(0) scale(0.97); }
 
-/* ============ HEADER — DESKTOP SINGLE-ROW FULL-WIDTH FIX ============
+/* ============ HEADER — DESKTOP SINGLE-ROW CENTERED FIX ============
    Desktop keeps the header as a single row with overflow:hidden, so when the
    action buttons (Tournaments..Install) exceed the header's max width the
    rightmost buttons (Settings / Install) get clipped at the right edge.
-   Fix: make the header full-width (instead of max 1180px) and keep the action
-   row on ONE line (no wrapping) so everything always fits and Settings is
-   never cut off. Slightly tighter button padding gives a little extra room.
+   Fix: make the header full-width (instead of max 1180px), keep the action
+   row on ONE line (no wrapping) so Settings is never cut off, and center the
+   whole header content (brand + actions) for a balanced, modern look.
+   Slightly tighter button padding gives extra room for the single row.
    Mobile (<=768px) already lays out as a grid and is intentionally untouched. */
 @media (min-width: 769px) {
-  .mychess-home-header { width: 100%; overflow: visible; padding: 0 16px; }
+  .mychess-home-header { width: 100%; overflow: visible; padding: 0 16px; justify-content: center; gap: 40px; }
   .mychess-header-actions { flex-wrap: nowrap; }
   .mychess-header-actions .mychess-shop-button { padding: 7px 10px; }
   .mychess-header-actions .mychess-home-logout { padding: 7px 10px; }
