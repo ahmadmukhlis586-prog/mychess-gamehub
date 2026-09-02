@@ -1,38 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE, TOKEN_KEY } from '../config';
-import { getMusicStatus } from '../helpers';
 import './match_cosmetics.css';
 
 const EntranceThemes = ({ token, players, socket }) => {
   const [entrances, setEntrances] = useState([]);
-  const audioRefs = useRef([]);
   const timerRef = useRef(null);
   const lastPlayRef = useRef(0);
 
   useEffect(() => {
     if (!socket) return undefined;
 
-    const playRolling = (theme, playerName) => {
-      const ms = getMusicStatus();
-      const aud = ms && ms.audio;
-      const matchMusicAudible = Boolean(aud && !aud.paused && aud.volume > 0);
-      if (matchMusicAudible) return;
-      const themeSrc = theme.audio_file && theme.audio_file.startsWith('http')
-        ? theme.audio_file
-        : `${window.location.origin}${theme.audio_file || '/assets/audio/my-intro-sound.mp3'}`;
-      const audio = new Audio();
-      audio.loop = false;
-      audio.volume = 0.55;
-      audio.src = themeSrc;
-      audio.play().catch(() => {});
-      audioRefs.current.push(audio);
-    };
-
     const handleStart = async () => {
       const now = Date.now();
       if (now - lastPlayRef.current < 3000) return;
       lastPlayRef.current = now;
       if (timerRef.current) clearTimeout(timerRef.current);
+
       const names = {
         [players?.white?.id]: players?.white?.name || 'White',
         [players?.black?.id]: players?.black?.name || 'Black',
@@ -54,10 +37,6 @@ const EntranceThemes = ({ token, players, socket }) => {
       }
       if (fetched.length === 0) return;
 
-      audioRefs.current.forEach((a) => { try { a.pause(); } catch (e) {} });
-      audioRefs.current = [];
-      fetched.forEach((t) => playRolling(t, t.playerName));
-
       setEntrances(fetched);
       timerRef.current = setTimeout(() => setEntrances([]), 5400);
     };
@@ -65,7 +44,6 @@ const EntranceThemes = ({ token, players, socket }) => {
     socket.on('gameStart', handleStart);
     return () => {
       socket.off('gameStart', handleStart);
-      audioRefs.current.forEach((a) => { try { a.pause(); } catch (e) {} });
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [socket, players, token]);
@@ -75,7 +53,7 @@ const EntranceThemes = ({ token, players, socket }) => {
   return (
     <div className="ent-layer">
       {entrances.map((t) => (
-        <div className="ent-card" key={t.playerName}>
+        <div className="ent-card" key={t.playerName} style={{ '--ent-glow': t.glow_hex || '#a855f7' }}>
           <div className="ent-emoji">{t.emoji || '⚡'}</div>
           <div className="ent-text">
             <div className="ent-name">{t.playerName}</div>

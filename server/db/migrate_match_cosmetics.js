@@ -1,32 +1,24 @@
 const { pool } = require('./connection');
 
 async function migrate() {
-    console.log('Running match cosmetics migration (move trails, entrance themes, emotes)...');
+    console.log('Running entrance banners migration (visual-only banners, 20 options)...');
+
+    // Remove the retired feature tables (move trails + emote wheel)
+    await pool.query(`
+      DROP TABLE IF EXISTS user_emote_inventory;
+      DROP TABLE IF EXISTS emotes;
+      DROP TABLE IF EXISTS user_move_trail;
+      DROP TABLE IF EXISTS move_trails;
+    `);
 
     await pool.query(`
-        CREATE TABLE IF NOT EXISTS move_trails (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            trail_key VARCHAR(50) NOT NULL UNIQUE,
-            color_hex VARCHAR(20) DEFAULT '#c084fc',
-            glow_hex VARCHAR(20) DEFAULT '#7c3aed',
-            rarity VARCHAR(30) DEFAULT 'common',
-            is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-
-        CREATE TABLE IF NOT EXISTS user_move_trail (
-            account_id UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
-            trail_id INT REFERENCES move_trails(id) ON DELETE CASCADE,
-            updated_at TIMESTAMPTZ DEFAULT NOW()
-        );
-
         CREATE TABLE IF NOT EXISTS entrance_themes (
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL UNIQUE,
             tagline VARCHAR(160) DEFAULT '',
             emoji VARCHAR(20) DEFAULT '⚡',
-            audio_file TEXT NOT NULL,
+            audio_file TEXT DEFAULT '',
+            glow_hex TEXT DEFAULT '#a855f7',
             rarity VARCHAR(30) DEFAULT 'common',
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMPTZ DEFAULT NOW()
@@ -38,75 +30,48 @@ async function migrate() {
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
 
-        CREATE TABLE IF NOT EXISTS emotes (
-            id SERIAL PRIMARY KEY,
-            emoji TEXT NOT NULL,
-            label VARCHAR(80) NOT NULL UNIQUE,
-            tag VARCHAR(40) DEFAULT 'generic',
-            cost_elo INT DEFAULT 0,
-            is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-
-        CREATE TABLE IF NOT EXISTS user_emote_inventory (
-            account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-            emote_id INT NOT NULL REFERENCES emotes(id) ON DELETE CASCADE,
-            PRIMARY KEY (account_id, emote_id)
-        );
+        ALTER TABLE entrance_themes ADD COLUMN IF NOT EXISTS glow_hex TEXT DEFAULT '#a855f7';
+        ALTER TABLE entrance_themes ALTER COLUMN audio_file DROP NOT NULL;
+        ALTER TABLE entrance_themes ALTER COLUMN audio_file SET DEFAULT '';
     `);
 
     await pool.query(`
-        INSERT INTO move_trails (name, trail_key, color_hex, glow_hex, rarity) VALUES
-            ('Comet', 'comet', '#c084fc', '#7c3aed', 'common'),
-            ('Ember', 'ember', '#fb923c', '#ef4444', 'uncommon'),
-            ('Lightning', 'lightning', '#22d3ee', '#0ea5e9', 'rare'),
-            ('Phantom', 'phantom', '#a3e635', '#65a30d', 'rare'),
-            ('Royal Gold', 'royal', '#fbbf24', '#f59e0b', 'epic'),
-            ('Galaxy Pearl', 'pearl', '#e879f9', '#d946ef', 'legendary')
-        ON CONFLICT (trail_key) DO NOTHING;
-    `);
-
-    await pool.query(`
-        INSERT INTO entrance_themes (name, tagline, emoji, audio_file, rarity) VALUES
-            ('Neon Star', 'Walk in like a main character', '✨', '/assets/audio/my-intro-sound.mp3', 'common'),
-            ('Fashion Flex', 'Style on them before move one', '🕶️', '/assets/audio/my-intro-sound-fashion.mp3', 'rare'),
-            ('Hype Build', 'Turn the lobby up', '🔥', '/assets/audio/h2h-styles.mp3', 'epic')
+        INSERT INTO entrance_themes (name, tagline, emoji, glow_hex, rarity) VALUES
+            ('Neon Star', 'Walk in like a main character', '✨', '#facc15', 'common'),
+            ('Fashion Flex', 'Style on them before move one', '🕶️', '#a855f7', 'rare'),
+            ('Hype Build', 'Turn the lobby up', '🔥', '#ef4444', 'epic'),
+            ('Royal Crown', 'Bow down, this is royalty', '👑', '#f59e0b', 'epic'),
+            ('Dragon Roar', 'Rawr. Checkmate incoming', '🐉', '#22c55e', 'legendary'),
+            ('Ice King', 'Zero degrees of mercy', '🧊', '#38bdf8', 'rare'),
+            ('Bubble Pop', 'Light as a bubble, sharp as a bishop', '🫧', '#e879f9', 'common'),
+            ('Galaxy Waver', 'From a galaxy far, far away', '🌌', '#818cf8', 'rare'),
+            ('Phantom Glide', 'Sneaky. Spooky. Mate.', '👻', '#94a3b8', 'uncommon'),
+            ('Diamond Hands', 'Never fold under pressure', '💎', '#a5f3fc', 'legendary'),
+            ('Aim Bot', 'Locked on target', '🎯', '#fb923c', 'uncommon'),
+            ('Thunder Clap', 'That move hit like lightning', '⚡', '#fde047', 'epic'),
+            ('Moon Lord', 'By the light of the night', '🌙', '#c4b5fd', 'rare'),
+            ('Lion Heart', 'Fearless in the endgame', '🦁', '#f97316', 'epic'),
+            ('Ninja Sneak', 'You never saw it coming', '🥷', '#475569', 'legendary'),
+            ('Robo Flex', 'Calculated. Beep boop, checkmate', '🤖', '#22d3ee', 'uncommon'),
+            ('Lucky Four', 'A little luck never hurt', '🍀', '#4ade80', 'common'),
+            ('Dunk King', 'Slam dunk on the king', '🏀', '#ef9235', 'epic'),
+            ('Rocket Launch', 'To the moon, then to the mate', '🚀', '#f43f5e', 'legendary'),
+            ('Sassy Win', 'Served, slayed, checkmated', '💅', '#f472b6', 'uncommon')
         ON CONFLICT (name) DO NOTHING;
-    `);
-
-    await pool.query(`
-        INSERT INTO emotes (emoji, label, tag, cost_elo) VALUES
-            ('⚡', 'Check!', 'check', 0),
-            ('😱', 'In check!', 'check', 0),
-            ('👀', 'Watch it!', 'check', 0),
-            ('💀', 'Bruh.', 'blunder', 0),
-            ('🤡', 'Clown move', 'blunder', 0),
-            ('🤯', 'Brain exploded', 'blunder', 20),
-            ('👑', 'King move', 'win', 0),
-            ('🎉', 'EZ clap', 'win', 0),
-            ('🔥', 'On fire!', 'win', 10),
-            ('🥶', 'Ice cold', 'win', 20),
-            ('💎', 'Diamond clutch', 'win', 100),
-            ('😎', 'GG', 'generic', 0),
-            ('🧠', '5 head', 'generic', 0),
-            ('🚀', 'Boosted', 'generic', 0),
-            ('💅', 'Slay', 'generic', 0)
-        ON CONFLICT (label) DO NOTHING;
     `);
 
     const counts = await pool.query(`
         SELECT
-            (SELECT COUNT(*) FROM move_trails) AS move_trails,
             (SELECT COUNT(*) FROM entrance_themes) AS entrance_themes,
-            (SELECT COUNT(*) FROM emotes) AS emotes
+            (SELECT COUNT(*) FROM user_entrance_theme) AS equipped
     `);
-    console.log('Seeded counts:', counts.rows[0]);
-    console.log('Match cosmetics migration complete.');
+    console.log('Banner counts:', counts.rows[0]);
+    console.log('Entrance banners migration complete.');
 }
 
 migrate()
     .then(() => process.exit(0))
     .catch((e) => {
-        console.error('Match cosmetics migration failed:', e);
+        console.error('Entrance banners migration failed:', e);
         process.exit(1);
     });

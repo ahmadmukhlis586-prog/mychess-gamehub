@@ -1,50 +1,8 @@
-/* ============ MATCH COSMETICS (move trails, entrance themes, emote wheel) ============ */
-/* Self-contained styles for the new additive features. No existing classes touched. */
+/* ============ ENTRANCE BANNERS ============ */
+/* Horizontal-only visual banners shown to both players at match start.
+   Self-contained styles for the entrance banner feature. No existing classes touched. */
 
-/* --- MOVE TRAILS --- */
-.mt-layer {
-  position: fixed;
-  pointer-events: none;
-  z-index: 60;
-  overflow: visible;
-}
-.mt-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.mt-line {
-  fill: none;
-  stroke-linecap: round;
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  animation: mtDraw 0.45s ease-out forwards;
-  filter: drop-shadow(0 0 6px var(--mt-glow, #7c3aed));
-}
-.mt-head {
-  animation: mtHeadPulse 0.55s ease-out forwards;
-  filter: drop-shadow(0 0 8px var(--mt-glow, #7c3aed));
-}
-.mt-fade {
-  animation: mtFade 0.4s ease-in forwards;
-}
-
-@keyframes mtDraw {
-  from { stroke-dashoffset: 100; }
-  to { stroke-dashoffset: 0; }
-}
-@keyframes mtFade {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-@keyframes mtHeadPulse {
-  0% { opacity: 0; transform: scale(0.3); }
-  30% { opacity: 1; transform: scale(1.4); }
-  60% { transform: scale(1); }
-  100% { opacity: 0; }
-}
-
-/* --- ENTRANCE THEMES (match banner) --- */
+/* --- MATCH BANNER OVERLAY --- */
 .ent-layer {
   position: fixed;
   inset: 0;
@@ -61,15 +19,15 @@
   align-items: center;
   gap: 14px;
   background: linear-gradient(145deg, rgba(30, 16, 48, 0.92), rgba(15, 10, 28, 0.9));
-  border: 1px solid rgba(168, 85, 247, 0.45);
+  border: 1px solid var(--ent-glow, #a855f7);
   border-radius: 16px;
   padding: 14px 22px;
-  box-shadow: 0 0 40px rgba(124, 58, 237, 0.5), inset 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 40px var(--ent-glow, #a855f7), inset 0 1px rgba(255, 255, 255, 0.06);
   animation: entZoom 5s ease-in-out forwards;
 }
 .ent-emoji {
   font-size: 30px;
-  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8));
+  filter: drop-shadow(0 0 10px var(--ent-glow, #a855f7));
 }
 .ent-text {
   display: flex;
@@ -86,7 +44,7 @@
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.2em;
-  color: #c084fc;
+  color: var(--ent-glow, #a855f7);
 }
 .ent-tagline {
   font-size: 11px;
@@ -102,153 +60,7 @@
   100% { transform: scale(1.05); opacity: 0; }
 }
 
-/* --- EMOTE WHEEL --- */
-.ew-root {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 450;
-}
-.ew-toggle {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  border: 1px solid rgba(168, 85, 247, 0.5);
-  background: linear-gradient(145deg, #6d28d9, #4c1d95);
-  color: #fff;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.45);
-  display: grid;
-  place-items: center;
-  transition: transform 0.2s;
-}
-.ew-toggle:hover { transform: scale(1.06); }
-.ew-panel {
-  position: absolute;
-  right: 0;
-  bottom: 54px;
-  width: 300px;
-  max-height: 340px;
-  overflow-y: auto;
-  background: linear-gradient(145deg, rgba(25, 14, 42, 0.96), rgba(12, 8, 22, 0.96));
-  border: 1px solid rgba(168, 85, 247, 0.28);
-  border-radius: 14px;
-  padding: 10px;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(12px);
-}
-.ew-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
-  padding: 8px 4px;
-  cursor: pointer;
-  color: #fff;
-  font-size: 20px;
-  transition: transform 0.15s, background 0.15s;
-}
-.ew-btn:hover { transform: translateY(-2px); background: rgba(168, 85, 247, 0.18); }
-.ew-btn-label {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.6);
-  text-align: center;
-  line-height: 1.1;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ew-bubble-layer {
-  position: fixed;
-  left: 50%;
-  bottom: 120px;
-  transform: translateX(-50%);
-  z-index: 460;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-}
-.ew-bubble {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(145deg, rgba(124, 58, 237, 0.95), rgba(88, 28, 135, 0.95));
-  border: 1px solid rgba(196, 181, 253, 0.35);
-  border-radius: 16px;
-  padding: 8px 14px;
-  color: #fff;
-  box-shadow: 0 0 22px rgba(124, 58, 237, 0.45);
-  animation: bubblePop 3.2s ease-in-out forwards;
-}
-.ew-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 22px;
-  width: 14px;
-  height: 14px;
-  background: inherit;
-  border-right: 1px solid rgba(196, 181, 253, 0.3);
-  border-bottom: 1px solid rgba(196, 181, 253, 0.3);
-  transform: rotate(45deg);
-  border-bottom-right-radius: 3px;
-}
-.ew-bubble > span { font-size: 20px; }
-.ew-bubble-label { font-size: 12px; font-weight: 700; }
-.ew-bubble-name { font-size: 9px; color: rgba(255, 255, 255, 0.6); }
-
-.ew-suggest {
-  position: fixed;
-  right: 16px;
-  bottom: 74px;
-  z-index: 440;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 220px;
-}
-.ew-suggest-pill {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(217, 70, 239, 0.2));
-  border: 1px solid rgba(217, 70, 239, 0.4);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 8px 12px;
-  cursor: pointer;
-  text-align: left;
-  animation: suggestPulse 1.8s ease-in-out infinite;
-  transition: transform 0.15s;
-}
-.ew-suggest-pill:hover { transform: translateY(-2px); }
-
-@keyframes bubblePop {
-  0% { transform: translateY(10px) scale(0.5); opacity: 0; }
-  14% { transform: translateY(0) scale(1.06); opacity: 1; }
-  22% { transform: scale(1); opacity: 1; }
-  84% { opacity: 1; }
-  100% { transform: translateY(-12px) scale(0.95); opacity: 0; }
-}
-@keyframes suggestPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
-  50% { box-shadow: 0 0 0 9px rgba(168, 85, 247, 0); }
-}
-
-/* --- MATCH COSMETICS PANEL (home equip carousels) --- */
+/* --- TOP 20 BANNER PICKER (home) --- */
 .mc-panel {
   width: 100%;
   box-sizing: border-box;
@@ -274,9 +86,9 @@
 }
 .mc-card {
   position: relative;
-  min-width: 150px;
-  max-width: 170px;
-  flex: 1 1 150px;
+  min-width: 130px;
+  max-width: 155px;
+  flex: 1 1 130px;
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 14px;
@@ -285,26 +97,18 @@
   transition: transform 0.2s, border-color 0.2s, background 0.2s;
   overflow: hidden;
 }
-.mc-card:hover { transform: translateY(-3px); border-color: rgba(168, 85, 247, 0.5); background: rgba(168, 85, 247, 0.08); }
+.mc-card:hover { transform: translateY(-3px); border-color: var(--ent-glow, #a855f7); background: rgba(168, 85, 247, 0.08); }
 .mc-card.selected {
-  border-color: #a855f7;
+  border-color: var(--ent-glow, #a855f7);
   background: rgba(168, 85, 247, 0.16);
-  box-shadow: 0 0 18px rgba(168, 85, 247, 0.35);
-}
-.mc-swatch {
-  width: 100%;
-  height: 62px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  font-size: 26px;
-  margin-bottom: 10px;
+  box-shadow: 0 0 18px var(--ent-glow, #a855f7);
 }
 .mc-theme .mc-emoji {
   font-size: 38px;
   text-align: center;
   display: block;
   margin: 4px 0 8px;
+  filter: drop-shadow(0 0 8px var(--ent-glow, #a855f7));
 }
 .mc-meta {
   display: flex;

@@ -32,9 +32,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import CinematicHero from './components/CinematicHero';
 import NotificationToast from './components/NotificationToast';
 import MusicCarousel from './components/MusicCarousel';
-import MoveTrails from './components/MoveTrails';
 import EntranceThemes from './components/EntranceThemes';
-import EmoteWheel from './components/EmoteWheel';
 import MatchCosmeticsPanel from './components/MatchCosmeticsPanel';
 import ChessQuiz from './components/ChessQuiz';
 import RecentMatchesFeed from './components/RecentMatchesFeed';
@@ -1205,17 +1203,7 @@ function App() {
       <div style={MATCH_STYLES.page}>
         <FloatingBackground />
         <MusicWidget />
-        <MoveTrails gameState={gameState} playerRole={playerRole} />
         <EntranceThemes token={localStorage.getItem(TOKEN_KEY)} players={players} socket={socketRef.current} />
-        <EmoteWheel
-          token={localStorage.getItem(TOKEN_KEY)}
-          roomId={localStorage.getItem(ROOM_KEY)}
-          receiverId={opponentId}
-          socket={socketRef.current}
-          gameState={gameState}
-          playerRole={playerRole}
-          account={account}
-        />
         <MessageNotifier />
 
         {showMatchFoundVS && (
@@ -1879,7 +1867,7 @@ function App() {
               </div>
               </ScrollReveal>
 
-              {/* Match cosmetics (move trails + entrance themes) — always last so new rows expand downward */}
+              {/* Entrance banners — always last so new rows expand downward */}
               <ScrollReveal delay={0.3}>
               <div style={{
                 width: '100%',
