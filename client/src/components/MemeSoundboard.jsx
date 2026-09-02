@@ -150,8 +150,6 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
     return () => { socket.off('memeSoundPlay', handler); };
   }, [socket, aiMode, account, sounds, playSound]);
 
-  if (equipped.length === 0 && !aiMode) return null;
-
   const rowVisible = open && equipped.length > 0;
 
   return (
@@ -162,7 +160,7 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
         onClick={toggleOpen}
         title="Meme sounds"
       >
-        {rowVisible ? '✕' : '🔊'}
+        {open ? '✕' : '🔊'}
       </button>
 
       {rowVisible && (
@@ -179,6 +177,12 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
               <span>{s.name}</span>
             </button>
           ))}
+        </div>
+      )}
+
+      {open && equipped.length === 0 && !aiMode && (
+        <div className="msb-empty">
+          No meme sounds equipped yet. Equip up to 5 from the Meme Sounds tab on the home page, then reopen this panel.
         </div>
       )}
 
