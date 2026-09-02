@@ -1,27 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE, TOKEN_KEY } from '../config';
+import { getMusicStatus } from '../helpers';
 import './match_cosmetics.css';
 
 const EntranceThemes = ({ token, players, socket }) => {
   const [entrances, setEntrances] = useState([]);
   const audioRefs = useRef([]);
   const timerRef = useRef(null);
+  const lastPlayRef = useRef(0);
 
   useEffect(() => {
     if (!socket) return undefined;
 
     const playRolling = (theme, playerName) => {
-      const audio = new Audio();
-      audio.loop = false;
-      audio.volume = 0.6;
-      audio.src = theme.audio_file && theme.audio_file.startsWith('http')
+      const ms = getMusicStatus();
+      const aud = ms && ms.audio;
+      const matchMusicAudible = Boolean(aud && !aud.paused && aud.volume > 0);
+      if (matchMusicAudible) return;
+      const themeSrc = theme.audio_file && theme.audio_file.startsWith('http')
         ? theme.audio_file
         : `${window.location.origin}${theme.audio_file || '/assets/audio/my-intro-sound.mp3'}`;
+      const audio = new Audio();
+      audio.loop = false;
+      audio.volume = 0.55;
+      audio.src = themeSrc;
       audio.play().catch(() => {});
       audioRefs.current.push(audio);
     };
 
     const handleStart = async () => {
+      const now = Date.now();
+      if (now - lastPlayRef.current < 3000) return;
+      lastPlayRef.current = now;
       if (timerRef.current) clearTimeout(timerRef.current);
       const names = {
         [players?.white?.id]: players?.white?.name || 'White',
