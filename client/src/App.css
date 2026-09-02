@@ -3554,3 +3554,14 @@ a, a:hover, a:focus, a:active, button, .btn {
 }
 .mychess-install-btn:hover { background: rgba(124, 58, 237, 0.3); transform: translateY(-1px); }
 .mychess-install-btn:active { transform: translateY(0) scale(0.97); }
+
+/* ============ HEADER ACTIONS — DESKTOP CLIPPING FIX ============
+   Desktop keeps the header as a single row with overflow:hidden, so when the
+   action buttons (Tournaments..Install) exceed the available width the rightmost
+   buttons (Settings / Install) get clipped at the header's right edge. This lets
+   them wrap to a second line instead. Mobile (<=768px) already wraps to a grid,
+   so it is intentionally not covered here. */
+@media (min-width: 769px) {
+  .mychess-home-header { overflow: visible; }
+  .mychess-header-actions { flex-wrap: wrap; row-gap: 4px; }
+}
