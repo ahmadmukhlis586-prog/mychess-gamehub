@@ -4769,7 +4769,7 @@ async function ensureMemeSoundsSchema() {
             ('Sick Play', '🫠', '/assets/audio/cortis-go.mp3'),
             ('GG EZ', '🎮', '/assets/audio/lngshot-moonwalkin.mp3'),
             ('Plot Twist', '🌀', '/assets/audio/my-custom-kill-ori.mp3')
-        ON CONFLICT (name) DO NOTHING;
+        ON CONFLICT (name) DO UPDATE SET emoji = EXCLUDED.emoji, audio_file = EXCLUDED.audio_file, is_active = TRUE;
     `);
 }
 

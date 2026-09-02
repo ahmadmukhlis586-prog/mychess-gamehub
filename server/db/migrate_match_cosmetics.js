@@ -33,7 +33,7 @@ async function migrate() {
             ('Oof Moment', '🫢', '/assets/audio/h2h-styles.mp3'),
             ('Fatality', '💥', '/assets/audio/my-custom-kill-ori.mp3'),
             ('Let''s Gooo', '🚀', '/assets/audio/cortis-go.mp3'),
-            ('Red Card', '🔴', '/assets/audio/cortis-redred.mp3'),
+            ('Red Card', '🔴', '/assets/audio/my-intro-sound.mp3'),
             ('Moonwalk', '🕺', '/assets/audio/lngshot-moonwalkin.mp3'),
             ('Styled Out', '🕶️', '/assets/audio/my-intro-sound-fashion.mp3'),
             ('Hype Check', '🔥', '/assets/audio/my-intro-sound.mp3'),
@@ -41,7 +41,7 @@ async function migrate() {
             ('Sick Play', '🫠', '/assets/audio/cortis-go.mp3'),
             ('GG EZ', '🎮', '/assets/audio/lngshot-moonwalkin.mp3'),
             ('Plot Twist', '🌀', '/assets/audio/my-custom-kill-ori.mp3')
-        ON CONFLICT (name) DO NOTHING;
+        ON CONFLICT (name) DO UPDATE SET emoji = EXCLUDED.emoji, audio_file = EXCLUDED.audio_file, is_active = TRUE;
     `);
 
     const counts = await pool.query(`
