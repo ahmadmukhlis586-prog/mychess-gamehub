@@ -147,16 +147,16 @@ async function migrate() {
     if (parseInt(calExisting.rows[0].count) === 0) {
         console.log('Seeding daily calendar rewards...');
         const calendarRewards = [
-            [1,'elo',2,'Start of streak!'],[2,'elo',3,'Day 2 bonus'],[3,'elo',5,'Hat trick!'],
-            [4,'elo',5,'On fire!'],[5,'elo',8,'High five!'],[6,'elo',10,'Streak master!'],
-            [7,'loot_box',1,'Weekly chest!'],[8,'elo',5,'Day 8'],[9,'elo',5,'Day 9'],
-            [10,'elo',10,'Double digits!'],[11,'elo',10,'Day 11'],[12,'elo',10,'Lucky 12!'],
-            [13,'elo',15,'Unlucky? No way!'],[14,'elo',15,'Day 14'],[15,'loot_box',2,'Mid-month loot!'],
-            [16,'elo',10,'Day 16'],[17,'elo',10,'Day 17'],[18,'elo',15,'Day 18'],
-            [19,'elo',15,'Day 19'],[20,'elo',20,'20 days strong!'],[21,'elo',15,'Day 21'],
-            [22,'elo',15,'Day 22'],[23,'elo',20,'Day 23'],[24,'elo',20,'Day 24'],
-            [25,'elo',25,'Christmas day bonus!'],[26,'elo',20,'Day 26'],[27,'elo',20,'Day 27'],
-            [28,'elo',25,'Almost there!'],[29,'elo',25,'Day 29'],[30,'elo',30,'Monthly champion!'],
+            [1,'elo',10,'Start of streak!'],[2,'elo',15,'Day 2 bonus'],[3,'elo',10,'Hat trick!'],
+            [4,'elo',20,'On fire!'],[5,'elo',15,'High five!'],[6,'elo',10,'Streak master!'],
+            [7,'loot_box',1,'Weekly chest!'],[8,'elo',15,'Day 8'],[9,'elo',20,'Day 9'],
+            [10,'elo',15,'Double digits!'],[11,'elo',25,'Day 11'],[12,'elo',20,'Lucky 12!'],
+            [13,'elo',15,'Unlucky? No way!'],[14,'loot_box',1,'Bi-weekly chest!'],[15,'elo',20,'Day 15'],
+            [16,'elo',25,'Day 16'],[17,'elo',20,'Day 17'],[18,'elo',30,'Day 18'],
+            [19,'elo',25,'Day 19'],[20,'elo',20,'20 days strong!'],[21,'loot_box',2,'Mid-month loot!'],
+            [22,'elo',25,'Day 22'],[23,'elo',30,'Day 23'],[24,'elo',25,'Day 24'],
+            [25,'elo',35,'Christmas day bonus!'],[26,'elo',30,'Day 26'],[27,'elo',25,'Day 27'],
+            [28,'loot_box',2,'Almost there!'],[29,'elo',30,'Day 29'],[30,'elo',40,'Monthly champion!'],
             [31,'loot_box',3,'Mega monthly reward!'],
         ];
         for (const r of calendarRewards) {

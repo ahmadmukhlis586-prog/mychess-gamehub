@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE, TOKEN_KEY } from '../config';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -11,42 +11,12 @@ function getLocalDate() {
   return `${y}-${m}-${d}`;
 }
 
-const REWARD_TABLE = [
-  { day: 1, type: 'elo', amount: 10, label: '+10 ELO' },
-  { day: 2, type: 'elo', amount: 15, label: '+15 ELO' },
-  { day: 3, type: 'elo', amount: 10, label: '+10 ELO' },
-  { day: 4, type: 'elo', amount: 20, label: '+20 ELO' },
-  { day: 5, type: 'elo', amount: 15, label: '+15 ELO' },
-  { day: 6, type: 'elo', amount: 10, label: '+10 ELO' },
-  { day: 7, type: 'loot', amount: 0, label: 'Loot Box!' },
-  { day: 8, type: 'elo', amount: 15, label: '+15 ELO' },
-  { day: 9, type: 'elo', amount: 20, label: '+20 ELO' },
-  { day: 10, type: 'elo', amount: 15, label: '+15 ELO' },
-  { day: 11, type: 'elo', amount: 25, label: '+25 ELO' },
-  { day: 12, type: 'elo', amount: 20, label: '+20 ELO' },
-  { day: 13, type: 'elo', amount: 15, label: '+15 ELO' },
-  { day: 14, type: 'loot', amount: 0, label: 'Loot Box!' },
-  { day: 15, type: 'elo', amount: 20, label: '+20 ELO' },
-  { day: 16, type: 'elo', amount: 25, label: '+25 ELO' },
-  { day: 17, type: 'elo', amount: 20, label: '+20 ELO' },
-  { day: 18, type: 'elo', amount: 30, label: '+30 ELO' },
-  { day: 19, type: 'elo', amount: 25, label: '+25 ELO' },
-  { day: 20, type: 'elo', amount: 20, label: '+20 ELO' },
-  { day: 21, type: 'loot', amount: 0, label: 'Loot Box!' },
-  { day: 22, type: 'elo', amount: 25, label: '+25 ELO' },
-  { day: 23, type: 'elo', amount: 30, label: '+30 ELO' },
-  { day: 24, type: 'elo', amount: 25, label: '+25 ELO' },
-  { day: 25, type: 'elo', amount: 35, label: '+35 ELO' },
-  { day: 26, type: 'elo', amount: 30, label: '+30 ELO' },
-  { day: 27, type: 'elo', amount: 25, label: '+25 ELO' },
-  { day: 28, type: 'loot', amount: 0, label: 'Loot Box!' },
-  { day: 29, type: 'elo', amount: 30, label: '+30 ELO' },
-  { day: 30, type: 'elo', amount: 40, label: '+40 ELO' },
-  { day: 31, type: 'loot', amount: 0, label: 'Loot Box!' },
-];
-
-function getRewardForDay(day) {
-  return REWARD_TABLE[day - 1] || REWARD_TABLE[0];
+function getRewardForDay(day, serverRewards) {
+  if (serverRewards && serverRewards.length > 0) {
+    const found = serverRewards.find(r => r.day_number === day);
+    if (found) return found;
+  }
+  return null;
 }
 
 const DailyCalendar = ({ token, onEloUpdate }) => {
@@ -58,12 +28,8 @@ const DailyCalendar = ({ token, onEloUpdate }) => {
   const [showReward, setShowReward] = useState(false);
   const [lastReward, setLastReward] = useState(null);
 
-  useEffect(() => {
+  const fetchCalendar = useCallback(async () => {
     if (!token) return;
-    fetchCalendar();
-  }, [token]);
-
-  const fetchCalendar = async () => {
     try {
       const localDate = getLocalDate();
       const res = await fetch(`${API_BASE}/daily-calendar?localDate=${localDate}`, {
@@ -80,7 +46,16 @@ const DailyCalendar = ({ token, onEloUpdate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchCalendar();
+  }, [fetchCalendar]);
+
+  useEffect(() => {
+    const interval = setInterval(fetchCalendar, 60000);
+    return () => clearInterval(interval);
+  }, [fetchCalendar]);
 
   const claimToday = async () => {
     if (todayClaimed || claiming) return;
@@ -96,7 +71,7 @@ const DailyCalendar = ({ token, onEloUpdate }) => {
       if (data.ok) {
         setLastReward(data.reward);
         setTodayClaimed(true);
-        setCurrentDay(prev => prev + 1);
+        setCurrentDay(prev => Math.min(prev + 1, 31));
         setShowReward(true);
         if (data.newElo && onEloUpdate) onEloUpdate(data.newElo);
         setTimeout(() => setShowReward(false), 2500);
@@ -130,7 +105,7 @@ const DailyCalendar = ({ token, onEloUpdate }) => {
         <span className="dc-header-icon">📅</span>
         <span className="dc-header-title">31-Day Reward Calendar</span>
         <span className="dc-streak">
-          🔥 Day {Math.min(currentDay + (todayClaimed ? 0 : 0), 31)} of 31
+          🔥 Day {Math.min(currentDay, 31)} of 31
         </span>
       </div>
 
@@ -143,7 +118,7 @@ const DailyCalendar = ({ token, onEloUpdate }) => {
       <div className="dc-grid">
         {Array.from({ length: 31 }, (_, i) => {
           const day = i + 1;
-          const reward = getRewardForDay(day);
+          const reward = getRewardForDay(day, rewards);
           const claimed = isDayClaimed(day);
           const isCurrent = isToday(day);
           const future = isFuture(day) && !claimed;
@@ -162,14 +137,19 @@ const DailyCalendar = ({ token, onEloUpdate }) => {
               <div className="dc-cell-day">{day}</div>
               {claimed ? (
                 <div className="dc-cell-check">✓</div>
-              ) : (
+              ) : reward ? (
                 <>
                   <div className="dc-cell-icon">
-                    {(reward.reward_type || reward.type) === 'loot_box' ? '📦' : '⚡'}
+                    {reward.reward_type === 'loot_box' ? '📦' : '⚡'}
                   </div>
                   <div className="dc-cell-reward">
-                    {(reward.reward_type || reward.type) === 'loot_box' ? 'Loot' : `+${reward.reward_amount || reward.amount} ELO`}
+                    {reward.reward_type === 'loot_box' ? 'Loot' : `+${reward.reward_amount} ELO`}
                   </div>
+                </>
+              ) : (
+                <>
+                  <div className="dc-cell-icon">⚡</div>
+                  <div className="dc-cell-reward">+10 ELO</div>
                 </>
               )}
             </div>
@@ -194,10 +174,10 @@ const DailyCalendar = ({ token, onEloUpdate }) => {
         <div className="dc-reward-popup">
           <div className="dc-reward-popup-inner">
             <span className="dc-reward-popup-icon">
-              {(lastReward.reward_type || lastReward.type) === 'loot_box' ? '📦' : '⚡'}
+              {lastReward.reward_type === 'loot_box' ? '📦' : '⚡'}
             </span>
             <span className="dc-reward-popup-text">
-              {(lastReward.reward_type || lastReward.type) === 'loot_box' ? 'Loot Box!' : `+${lastReward.reward_amount || lastReward.amount} ELO`}
+              {lastReward.reward_type === 'loot_box' ? 'Loot Box!' : `+${lastReward.reward_amount} ELO`}
             </span>
           </div>
         </div>
