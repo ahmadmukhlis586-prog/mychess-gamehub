@@ -14,6 +14,11 @@ const circularDist = (i, sel, n) => {
   return d;
 };
 
+const resolveCover = (cover) => {
+  if (!cover) return '';
+  return cover.startsWith('http') ? cover : `${window.location.origin}${cover}`;
+};
+
 const MemeSoundsCarousel = ({
   sounds = [],
   equippedIds = new Set(),
@@ -108,7 +113,11 @@ const MemeSoundsCarousel = ({
               <div className="msc-face" key={`face-${sound.id}-${isFront ? popTick : 0}`}>
                 {ring && ring.soundId === sound.id && <span className="msc-ring" key={ring.id} />}
                 {isNew && <span className="msc-new">NEW</span>}
-                <span className="msc-emoji">{sound.emoji || '🔊'}</span>
+                {sound.cover_image ? (
+                  <img className="msc-cover" src={resolveCover(sound.cover_image)} alt={sound.name} />
+                ) : (
+                  <span className="msc-emoji">{sound.emoji || '🔊'}</span>
+                )}
                 <div className="msc-name">{sound.name}</div>
                 <div className="msc-actions">
                   <button type="button" className="msc-play" onClick={() => onPreview && onPreview(sound)} title="Preview sound">▶</button>

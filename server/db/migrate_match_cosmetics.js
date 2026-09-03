@@ -14,6 +14,7 @@ async function migrate() {
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL UNIQUE,
             emoji VARCHAR(20) DEFAULT '🔊',
+            cover_image TEXT,
             audio_file TEXT NOT NULL,
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMPTZ DEFAULT NOW()
@@ -26,6 +27,9 @@ async function migrate() {
             PRIMARY KEY (account_id, meme_sound_id)
         );
     `);
+
+    // Add cover_image column if missing (idempotent).
+    await pool.query(`ALTER TABLE meme_sounds ADD COLUMN IF NOT EXISTS cover_image TEXT`);
 
     await pool.query(`
         INSERT INTO meme_sounds (name, emoji, audio_file) VALUES

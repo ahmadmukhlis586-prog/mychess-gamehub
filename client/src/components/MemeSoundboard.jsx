@@ -29,6 +29,11 @@ const resolveAudio = (file) => {
   return file.startsWith('http') ? file : `${window.location.origin}${file}`;
 };
 
+const resolveCover = (cover) => {
+  if (!cover) return '';
+  return cover.startsWith('http') ? cover : `${window.location.origin}${cover}`;
+};
+
 const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) => {
   const [sounds, setSounds] = useState([]);
   const [equippedIds, setEquippedIds] = useState(() => readEquipCache());
@@ -115,6 +120,7 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
           name: sound.name,
           emoji: sound.emoji,
           audioFile: sound.audio_file,
+          coverImage: sound.cover_image || '',
         }),
       });
     } catch (e) { /* ignore */ }
@@ -143,7 +149,7 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
     const handler = (data) => {
       if (!data) return;
       if (data.senderId && account && String(data.senderId) === String(account.id)) return;
-      const match = sounds.find(s => s.id === data.memeSoundId) || (data.audioFile ? { id: data.memeSoundId, name: data.name || '', emoji: data.emoji || '🔊', audio_file: data.audioFile } : null);
+      const match = sounds.find(s => s.id === data.memeSoundId) || (data.audioFile ? { id: data.memeSoundId, name: data.name || '', emoji: data.emoji || '🔊', audio_file: data.audioFile, cover_image: data.coverImage || '' } : null);
       if (match) playSound(match, data.senderName);
     };
     socket.on('memeSoundPlay', handler);
@@ -173,7 +179,11 @@ const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) 
               onClick={() => sendSound(s)}
               title={s.name}
             >
-              <span className="msb-chip-emoji">{s.emoji || '🔊'}</span>
+              {s.cover_image ? (
+                <img className="msb-chip-cover" src={resolveCover(s.cover_image)} alt={s.name} />
+              ) : (
+                <span className="msb-chip-emoji">{s.emoji || '🔊'}</span>
+              )}
               <span>{s.name}</span>
             </button>
           ))}

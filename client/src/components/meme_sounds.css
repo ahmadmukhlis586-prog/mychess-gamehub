@@ -87,6 +87,14 @@
 .msb-chip:hover { transform: translateY(-3px) scale(1.05); background: rgba(168, 85, 247, 0.22); border-color: rgba(168, 85, 247, 0.5); }
 .msb-chip:active { transform: scale(0.94); }
 .msb-chip .msb-chip-emoji { font-size: 17px; line-height: 1; }
+.msb-chip .msb-chip-cover {
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  background: rgba(0, 0, 0, 0.4);
+}
 .msb-chip.playing {
   border-color: #d946ef;
   background: linear-gradient(145deg, rgba(217, 70, 239, 0.35), rgba(124, 58, 237, 0.3));

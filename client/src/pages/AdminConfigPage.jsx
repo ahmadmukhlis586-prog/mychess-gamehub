@@ -30,6 +30,7 @@ const AdminConfigPage = ({ token, onBack }) => {
   const [memeForm, setMemeForm] = useState({});
   const [editingMeme, setEditingMeme] = useState(null);
   const [memeAudioFile, setMemeAudioFile] = useState(null);
+  const [memeCoverFile, setMemeCoverFile] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -375,6 +376,7 @@ const AdminConfigPage = ({ token, onBack }) => {
     setEditingMeme(item);
     setMemeForm(item);
     setMemeAudioFile(null);
+    setMemeCoverFile(null);
   };
 
   const handleMemeSoundSave = async (e) => {
@@ -389,6 +391,7 @@ const AdminConfigPage = ({ token, onBack }) => {
     payload.append('name', memeForm.name || '');
     payload.append('emoji', memeForm.emoji || '🔊');
     if (memeAudioFile) payload.append('audio_file', memeAudioFile);
+    if (memeCoverFile) payload.append('cover_image', memeCoverFile);
 
     try {
       const res = await fetch(url, {
@@ -404,6 +407,7 @@ const AdminConfigPage = ({ token, onBack }) => {
       setMemeForm({});
       setEditingMeme(null);
       setMemeAudioFile(null);
+      setMemeCoverFile(null);
       setShowSuccess(true);
       fetchMemeSoundList();
     } catch (error) {
@@ -746,12 +750,26 @@ const AdminConfigPage = ({ token, onBack }) => {
                 <input type="text" name="emoji" placeholder="📢" value={memeForm.emoji || ''} onChange={handleMemeSoundChange} />
               </div>
               <div className="admin-input-group full-width">
+                <label>Upload Cover Image (optional — use a photo instead of the emoji)</label>
+                <input type="file" name="cover_image" accept="image/*" onChange={(e) => setMemeCoverFile(e.target.files[0])} />
+                {editingMeme && memeForm.cover_image && (
+                  <div className="admin-meme-cover-current">
+                    <span>Current cover:</span>
+                    <img
+                      src={memeForm.cover_image.startsWith('http') ? memeForm.cover_image : `${SERVER_URL}${memeForm.cover_image}`}
+                      alt={memeForm.name || 'cover'}
+                    />
+                    <span className="admin-meme-cover-hint">Leave empty to keep the emoji as the cover.</span>
+                  </div>
+                )}
+              </div>
+              <div className="admin-input-group full-width">
                 <label>Upload Audio File (.mp3)</label>
                 <input type="file" name="audio_file" accept="audio/*" onChange={(e) => setMemeAudioFile(e.target.files[0])} required={!editingMeme} />
               </div>
               <div className="admin-form-actions full-width">
                 <button type="submit" className="admin-save-btn">{editingMeme ? 'Update Sound' : 'Create Sound'}</button>
-                {editingMeme && <button type="button" className="admin-cancel-btn" onClick={() => { setEditingMeme(null); setMemeForm({}); setMemeAudioFile(null); }}>Cancel</button>}
+                {editingMeme && <button type="button" className="admin-cancel-btn" onClick={() => { setEditingMeme(null); setMemeForm({}); setMemeAudioFile(null); setMemeCoverFile(null); }}>Cancel</button>}
               </div>
             </form>
           </div>
@@ -766,8 +784,24 @@ const AdminConfigPage = ({ token, onBack }) => {
                 {memeSounds.map(item => (
                   <div key={item.id} className="admin-list-item">
                     <div className="admin-item-info">
-                      <span className="admin-item-name">{item.emoji || '🔊'} {item.name}</span>
-                      <span className="admin-item-meta">{item.audio_file || 'No audio'}</span>
+                      {item.cover_image ? (
+                        <img
+                          src={item.cover_image.startsWith('http') ? item.cover_image : `${SERVER_URL}${item.cover_image}`}
+                          alt={item.name}
+                          className="admin-meme-cover-thumb"
+                        />
+                      ) : (
+                        <span className="admin-item-name" style={{ fontSize: '22px' }}>{item.emoji || '🔊'}</span>
+                      )}
+                      <div className="admin-item-details">
+                        <span className="admin-item-name">{item.name}</span>
+                        <span className="admin-item-meta">{item.audio_file || 'No audio'}</span>
+                        {item.cover_image ? (
+                          <span className="admin-item-meta">🖼️ Uses image cover</span>
+                        ) : (
+                          <span className="admin-item-meta">Emoji cover: {item.emoji || '🔊'}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="admin-item-actions">
                       <button className="admin-edit-btn" onClick={() => handleEditMemeSound(item)}>✏️ Edit</button>

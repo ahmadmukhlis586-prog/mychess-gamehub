@@ -67,6 +67,17 @@
   line-height: 1;
   filter: drop-shadow(0 10px 16px rgba(124, 58, 237, 0.5));
 }
+.msc-cover {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 2px solid rgba(168, 85, 247, 0.45);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+.msc-card.playing .msc-cover {
+  animation: mscBop 0.5s ease-in-out infinite;
+}
 .msc-name {
   font-size: 15px;
   font-weight: 800;

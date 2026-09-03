@@ -4675,7 +4675,7 @@ app.post('/api/meme-sounds/unequip', requireAuth, async (req, res) => {
 
 app.post('/api/meme-sounds/play', requireAuth, async (req, res) => {
     try {
-        const { roomId, receiverId, memeSoundId, name, emoji, audioFile } = req.body;
+        const { roomId, receiverId, memeSoundId, name, emoji, audioFile, coverImage } = req.body;
         if (!roomId || !memeSoundId) return res.status(400).json({ ok: false });
         const bubbleText = `${emoji || '🔊'} ${name || 'Meme sound'}`;
         await pool.query(
@@ -4689,6 +4689,7 @@ app.post('/api/meme-sounds/play', requireAuth, async (req, res) => {
             name: name || '',
             emoji: emoji || '🔊',
             audioFile: audioFile || '',
+            coverImage: coverImage || '',
         });
         res.json({ ok: true });
     } catch (error) {
@@ -4711,17 +4712,19 @@ app.get('/api/admin/meme-sounds', requireAuth, requireAdmin, async (req, res) =>
 });
 
 app.post('/api/admin/meme-sounds/create', requireAuth, requireAdmin, upload.fields([
-    { name: 'audio_file', maxCount: 1 }
+    { name: 'audio_file', maxCount: 1 },
+    { name: 'cover_image', maxCount: 1 }
 ]), async (req, res) => {
     const { name, emoji } = req.body;
     const audioPath = req.files?.audio_file ? await cloudStorage.saveUploadedFile(req.files.audio_file[0], 'audio') : null;
+    const coverPath = req.files?.cover_image ? await cloudStorage.saveUploadedFile(req.files.cover_image[0], 'images') : null;
     if (!name || !audioPath) {
         return res.status(400).json({ ok: false, message: 'Name and Audio File are required' });
     }
     try {
         const result = await pool.query(
-            'INSERT INTO meme_sounds (name, emoji, audio_file) VALUES ($1, $2, $3) RETURNING *',
-            [name, emoji || '🔊', audioPath]
+            'INSERT INTO meme_sounds (name, emoji, cover_image, audio_file) VALUES ($1, $2, $3, $4) RETURNING *',
+            [name, emoji || '🔊', coverPath, audioPath]
         );
         res.json({ ok: true, item: result.rows[0] });
     } catch (error) {
@@ -4731,7 +4734,8 @@ app.post('/api/admin/meme-sounds/create', requireAuth, requireAdmin, upload.fiel
 });
 
 app.put('/api/admin/meme-sounds/update/:id', requireAuth, requireAdmin, upload.fields([
-    { name: 'audio_file', maxCount: 1 }
+    { name: 'audio_file', maxCount: 1 },
+    { name: 'cover_image', maxCount: 1 }
 ]), async (req, res) => {
     const { id } = req.params;
     const { name, emoji } = req.body;
@@ -4740,10 +4744,11 @@ app.put('/api/admin/meme-sounds/update/:id', requireAuth, requireAdmin, upload.f
         return res.status(404).json({ ok: false, message: 'Meme sound not found' });
     }
     const audioPath = req.files?.audio_file ? await cloudStorage.saveUploadedFile(req.files.audio_file[0], 'audio') : current.rows[0].audio_file;
+    const coverPath = req.files?.cover_image ? await cloudStorage.saveUploadedFile(req.files.cover_image[0], 'images') : current.rows[0].cover_image;
     try {
         const result = await pool.query(
-            'UPDATE meme_sounds SET name = $1, emoji = $2, audio_file = $3 WHERE id = $4 RETURNING *',
-            [name, emoji || '🔊', audioPath, id]
+            'UPDATE meme_sounds SET name = $1, emoji = $2, cover_image = $3, audio_file = $4 WHERE id = $5 RETURNING *',
+            [name, emoji || '🔊', coverPath, audioPath, id]
         );
         res.json({ ok: true, item: result.rows[0] });
     } catch (error) {
@@ -4778,6 +4783,7 @@ async function ensureMemeSoundsSchema() {
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL UNIQUE,
             emoji VARCHAR(20) DEFAULT '🔊',
+            cover_image TEXT,
             audio_file TEXT NOT NULL,
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMPTZ DEFAULT NOW()
@@ -4789,6 +4795,9 @@ async function ensureMemeSoundsSchema() {
             PRIMARY KEY (account_id, meme_sound_id)
         );
     `);
+
+    // Add cover_image column for meme covers if missing (idempotent so prod always syncs).
+    await pool.query(`ALTER TABLE meme_sounds ADD COLUMN IF NOT EXISTS cover_image TEXT`);
 
     // Enforce the max of 5 equipped meme sounds per player (trim older picks).
     await pool.query(`
