@@ -37,7 +37,7 @@ const resolveCover = (cover) => {
 const MemeSoundboard = ({ token, roomId, receiverId, socket, account, aiMode }) => {
   const [sounds, setSounds] = useState([]);
   const [equippedIds, setEquippedIds] = useState(() => readEquipCache());
-  const [open, setOpen] = useState(aiMode);
+  const [open, setOpen] = useState(true);
   const [playingId, setPlayingId] = useState(null);
   const [wave, setWave] = useState(null);
   const [floats, setFloats] = useState([]);
