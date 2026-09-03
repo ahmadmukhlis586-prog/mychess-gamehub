@@ -828,6 +828,41 @@ function daysBetweenDates(dateStr1, dateStr2) {
 // ============================================
 // DAILY CALENDAR
 // ============================================
+// Authoritative 31-day reward definitions. The DB (daily_calendar) is synced to
+// this table on server startup so the catalog always matches deployed code.
+const CALENDAR_REWARDS = [
+    [1,'elo',10,'Start of streak!'],[2,'elo',15,'Day 2 bonus'],[3,'elo',10,'Hat trick!'],
+    [4,'elo',20,'On fire!'],[5,'elo',15,'High five!'],[6,'elo',10,'Streak master!'],
+    [7,'loot_box',1,'Weekly chest!'],[8,'elo',15,'Day 8'],[9,'elo',20,'Day 9'],
+    [10,'elo',15,'Double digits!'],[11,'elo',25,'Day 11'],[12,'elo',20,'Lucky 12!'],
+    [13,'elo',15,'Unlucky? No way!'],[14,'loot_box',1,'Bi-weekly chest!'],[15,'elo',20,'Day 15'],
+    [16,'elo',25,'Day 16'],[17,'elo',20,'Day 17'],[18,'elo',30,'Day 18'],
+    [19,'elo',25,'Day 19'],[20,'elo',20,'20 days strong!'],[21,'loot_box',2,'Mid-month loot!'],
+    [22,'elo',25,'Day 22'],[23,'elo',30,'Day 23'],[24,'elo',25,'Day 24'],
+    [25,'elo',35,'Christmas day bonus!'],[26,'elo',30,'Day 26'],[27,'elo',25,'Day 27'],
+    [28,'loot_box',2,'Almost there!'],[29,'elo',30,'Day 29'],[30,'elo',40,'Monthly champion!'],
+    [31,'loot_box',3,'Mega monthly reward!'],
+];
+
+async function syncDailyCalendar() {
+    try {
+        for (const [day, type, amount, desc] of CALENDAR_REWARDS) {
+            await pool.query(
+                `INSERT INTO daily_calendar (day_number, reward_type, reward_amount, description)
+                 VALUES ($1,$2,$3,$4)
+                 ON CONFLICT (day_number) DO UPDATE
+                   SET reward_type = EXCLUDED.reward_type,
+                       reward_amount = EXCLUDED.reward_amount,
+                       description = EXCLUDED.description`,
+                [day, type, amount, desc]
+            );
+        }
+        console.log('✅ daily_calendar synced (' + CALENDAR_REWARDS.length + ' rewards)');
+    } catch (e) {
+        console.error('⚠️ Failed to sync daily_calendar:', e.message);
+    }
+}
+
 app.get('/api/daily-calendar', requireAuth, async (req, res) => {
     try {
         const rewards = (await pool.query('SELECT * FROM daily_calendar ORDER BY day_number')).rows;
@@ -4872,6 +4907,12 @@ const serverInstance = server.listen(PORT, async () => {
         console.log('✅ meme sounds tables ensured');
     } catch (e) {
         console.error('⚠️ Failed to ensure match cosmetics schema:', e.message);
+    }
+
+    try {
+        await syncDailyCalendar();
+    } catch (e) {
+        console.error('⚠️ syncDailyCalendar error:', e.message);
     }
 
     try {
